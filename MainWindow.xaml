@@ -420,6 +420,31 @@
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
 
+                    <!-- IsReview -->
+                    <GridViewColumn Header="IsReview" Width="70">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <CheckBox IsChecked="{Binding IsReview}"
+                                          IsEnabled="False"
+                                          IsHitTestVisible="False"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+
+                    <!-- Dev Process -->
+                    <GridViewColumn Header="Dev Process" Width="130">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding DevelopProcess}"
+                                           TextTrimming="CharacterEllipsis"
+                                           ToolTip="{Binding DevelopProcess}"
+                                           VerticalAlignment="Center" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+
                     <!-- 見積 -->
                     <GridViewColumn Header="見積 (h)" Width="80">
                         <GridViewColumn.CellTemplate>
