@@ -23,6 +23,8 @@ public class AdoService
         "Microsoft.VSTS.Scheduling.OriginalEstimate",
         "Microsoft.VSTS.Scheduling.RemainingWork",
         "Microsoft.VSTS.Scheduling.CompletedWork",
+        "Custom.IsReview",
+        "Custom.DevelopProcess",
     ];
 
     public AdoService(string orgUrl, string project, string pat)
@@ -142,6 +144,17 @@ public class AdoService
             return null;
         }
 
+        bool? GetBool(string field)
+        {
+            if (!fields.TryGetProperty(field, out var val)) return null;
+            return val.ValueKind switch
+            {
+                JsonValueKind.True => true,
+                JsonValueKind.False => false,
+                _ => null,
+            };
+        }
+
         return new WorkItemData
         {
             Id = element.GetProperty("id").GetInt32(),
@@ -153,6 +166,8 @@ public class AdoService
             OriginalEstimate = GetDouble("Microsoft.VSTS.Scheduling.OriginalEstimate"),
             RemainingWork = GetDouble("Microsoft.VSTS.Scheduling.RemainingWork"),
             CompletedWork = GetDouble("Microsoft.VSTS.Scheduling.CompletedWork"),
+            IsReview = GetBool("Custom.IsReview"),
+            DevelopProcess = GetStr("Custom.DevelopProcess"),
         };
     }
 }

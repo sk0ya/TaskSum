@@ -22,6 +22,8 @@ public class MainViewModel : INotifyPropertyChanged
     private string _statusMessage = "準備完了";
     private bool _isAssignedToOpen;
     private bool _isStateOpen;
+    private bool _isIsReviewOpen;
+    private bool _isDevelopProcessOpen;
 
     private readonly List<WorkItemNodeViewModel> _rootNodes = [];
 
@@ -76,6 +78,18 @@ public class MainViewModel : INotifyPropertyChanged
         set { _isStateOpen = value; OnPropertyChanged(); }
     }
 
+    public bool IsIsReviewOpen
+    {
+        get => _isIsReviewOpen;
+        set { _isIsReviewOpen = value; OnPropertyChanged(); }
+    }
+
+    public bool IsDevelopProcessOpen
+    {
+        get => _isDevelopProcessOpen;
+        set { _isDevelopProcessOpen = value; OnPropertyChanged(); }
+    }
+
     public string AssignedToDisplayText
     {
         get
@@ -94,12 +108,32 @@ public class MainViewModel : INotifyPropertyChanged
         }
     }
 
+    public string IsReviewDisplayText
+    {
+        get
+        {
+            var checked_ = IsReviewOptions.Where(o => o.IsChecked).Select(o => o.Name).ToList();
+            return checked_.Count == 0 ? "すべて" : string.Join(", ", checked_);
+        }
+    }
+
+    public string DevelopProcessDisplayText
+    {
+        get
+        {
+            var checked_ = DevelopProcessOptions.Where(o => o.IsChecked).Select(o => o.Name).ToList();
+            return checked_.Count == 0 ? "すべて" : string.Join(", ", checked_);
+        }
+    }
+
     // ----------------------------------------
     // コレクション
     // ----------------------------------------
     public ObservableCollection<WorkItemNodeViewModel> VisibleNodes { get; } = [];
     public ObservableCollection<FilterOption> AssignedToOptions { get; } = [];
     public ObservableCollection<FilterOption> StateOptions { get; } = [];
+    public ObservableCollection<FilterOption> IsReviewOptions { get; } = [];
+    public ObservableCollection<FilterOption> DevelopProcessOptions { get; } = [];
     public ObservableCollection<AggregationItem> AggregationItems { get; } = [];
 
     // ----------------------------------------
@@ -298,6 +332,32 @@ public class MainViewModel : INotifyPropertyChanged
             StateOptions.Add(opt);
         }
         OnPropertyChanged(nameof(StateDisplayText));
+
+        // IsReview: True / False の固定2択
+        var prevCheckedIsReview = IsReviewOptions.Where(o => o.IsChecked).Select(o => o.Name).ToHashSet();
+        IsReviewOptions.Clear();
+        foreach (var name in new[] { "True", "False" })
+        {
+            var opt = new FilterOption(name, prevCheckedIsReview.Contains(name));
+            opt.PropertyChanged += OnIsReviewOptionChanged;
+            IsReviewOptions.Add(opt);
+        }
+        OnPropertyChanged(nameof(IsReviewDisplayText));
+
+        // DevelopProcess: データから動的生成
+        var prevCheckedDevProcess = DevelopProcessOptions.Where(o => o.IsChecked).Select(o => o.Name).ToHashSet();
+        DevelopProcessOptions.Clear();
+        foreach (var dp in allNodes
+            .Select(n => n.DevelopProcess)
+            .Where(s => !string.IsNullOrEmpty(s))
+            .Distinct()
+            .OrderBy(s => s))
+        {
+            var opt = new FilterOption(dp, prevCheckedDevProcess.Contains(dp));
+            opt.PropertyChanged += OnDevelopProcessOptionChanged;
+            DevelopProcessOptions.Add(opt);
+        }
+        OnPropertyChanged(nameof(DevelopProcessDisplayText));
     }
 
     private void OnAssignedToOptionChanged(object? sender, PropertyChangedEventArgs e)
@@ -314,6 +374,20 @@ public class MainViewModel : INotifyPropertyChanged
         ApplyFilters();
     }
 
+    private void OnIsReviewOptionChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName != nameof(FilterOption.IsChecked)) return;
+        OnPropertyChanged(nameof(IsReviewDisplayText));
+        ApplyFilters();
+    }
+
+    private void OnDevelopProcessOptionChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName != nameof(FilterOption.IsChecked)) return;
+        OnPropertyChanged(nameof(DevelopProcessDisplayText));
+        ApplyFilters();
+    }
+
     // ----------------------------------------
     // フィルタ適用
     // ----------------------------------------
@@ -321,18 +395,22 @@ public class MainViewModel : INotifyPropertyChanged
     {
         var assignedSet = AssignedToOptions.Where(o => o.IsChecked).Select(o => o.Name).ToHashSet();
         var stateSet = StateOptions.Where(o => o.IsChecked).Select(o => o.Name).ToHashSet();
+        var isReviewSet = IsReviewOptions.Where(o => o.IsChecked).Select(o => o.Name).ToHashSet();
+        var devProcessSet = DevelopProcessOptions.Where(o => o.IsChecked).Select(o => o.Name).ToHashSet();
 
         VisibleNodes.Clear();
         foreach (var root in _rootNodes)
-            AddVisibleNodes(root, assignedSet, stateSet);
+            AddVisibleNodes(root, assignedSet, stateSet, isReviewSet, devProcessSet);
 
-        UpdateAggregation(assignedSet, stateSet);
+        UpdateAggregation(assignedSet, stateSet, isReviewSet, devProcessSet);
     }
 
-    private void AddVisibleNodes(WorkItemNodeViewModel node, HashSet<string> assignedSet, HashSet<string> stateSet)
+    private void AddVisibleNodes(WorkItemNodeViewModel node,
+        HashSet<string> assignedSet, HashSet<string> stateSet,
+        HashSet<string> isReviewSet, HashSet<string> devProcessSet)
     {
-        bool selfMatches = MatchesFilter(node, assignedSet, stateSet);
-        bool anyDescendantMatches = AnyDescendantMatches(node, assignedSet, stateSet);
+        bool selfMatches = MatchesFilter(node, assignedSet, stateSet, isReviewSet, devProcessSet);
+        bool anyDescendantMatches = AnyDescendantMatches(node, assignedSet, stateSet, isReviewSet, devProcessSet);
 
         if (!selfMatches && !anyDescendantMatches) return;
 
@@ -341,24 +419,37 @@ public class MainViewModel : INotifyPropertyChanged
         if (!node.IsExpanded) return;
 
         foreach (var child in node.Children)
-            AddVisibleNodes(child, assignedSet, stateSet);
+            AddVisibleNodes(child, assignedSet, stateSet, isReviewSet, devProcessSet);
     }
 
-    private static bool AnyDescendantMatches(WorkItemNodeViewModel node, HashSet<string> assignedSet, HashSet<string> stateSet)
+    private static bool AnyDescendantMatches(WorkItemNodeViewModel node,
+        HashSet<string> assignedSet, HashSet<string> stateSet,
+        HashSet<string> isReviewSet, HashSet<string> devProcessSet)
     {
         foreach (var child in node.Children)
         {
-            if (MatchesFilter(child, assignedSet, stateSet) || AnyDescendantMatches(child, assignedSet, stateSet))
+            if (MatchesFilter(child, assignedSet, stateSet, isReviewSet, devProcessSet) ||
+                AnyDescendantMatches(child, assignedSet, stateSet, isReviewSet, devProcessSet))
                 return true;
         }
         return false;
     }
 
-    private static bool MatchesFilter(WorkItemNodeViewModel node, HashSet<string> assignedSet, HashSet<string> stateSet)
+    private static bool MatchesFilter(WorkItemNodeViewModel node,
+        HashSet<string> assignedSet, HashSet<string> stateSet,
+        HashSet<string> isReviewSet, HashSet<string> devProcessSet)
     {
         if (assignedSet.Count > 0 && !assignedSet.Contains(node.AssignedTo))
             return false;
         if (stateSet.Count > 0 && !stateSet.Contains(node.State))
+            return false;
+        if (isReviewSet.Count > 0)
+        {
+            var nodeReview = (node.IsReview ?? false).ToString(); // "True" or "False"
+            if (!isReviewSet.Contains(nodeReview))
+                return false;
+        }
+        if (devProcessSet.Count > 0 && !devProcessSet.Contains(node.DevelopProcess))
             return false;
         return true;
     }
@@ -366,12 +457,13 @@ public class MainViewModel : INotifyPropertyChanged
     // ----------------------------------------
     // 集計
     // ----------------------------------------
-    private void UpdateAggregation(HashSet<string> assignedSet, HashSet<string> stateSet)
+    private void UpdateAggregation(HashSet<string> assignedSet, HashSet<string> stateSet,
+        HashSet<string> isReviewSet, HashSet<string> devProcessSet)
     {
         AggregationItems.Clear();
 
         var targets = VisibleNodes
-            .Where(n => MatchesFilter(n, assignedSet, stateSet) &&
+            .Where(n => MatchesFilter(n, assignedSet, stateSet, isReviewSet, devProcessSet) &&
                         (n.OriginalEstimate.HasValue || n.RemainingWork.HasValue || n.CompletedWork.HasValue))
             .ToList();
 

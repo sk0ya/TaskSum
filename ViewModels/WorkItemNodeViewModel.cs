@@ -17,6 +17,8 @@ public class WorkItemNodeViewModel : INotifyPropertyChanged
     public double? OriginalEstimate { get; }
     public double? RemainingWork { get; }
     public double? CompletedWork { get; }
+    public bool? IsReview { get; }
+    public string DevelopProcess { get; }
 
     public int Level { get; set; }
 
@@ -42,6 +44,8 @@ public class WorkItemNodeViewModel : INotifyPropertyChanged
         OriginalEstimate = data.OriginalEstimate;
         RemainingWork = data.RemainingWork;
         CompletedWork = data.CompletedWork;
+        IsReview = data.IsReview;
+        DevelopProcess = data.DevelopProcess;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

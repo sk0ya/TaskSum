@@ -11,4 +11,6 @@ public class WorkItemData
     public double? OriginalEstimate { get; set; }
     public double? RemainingWork { get; set; }
     public double? CompletedWork { get; set; }
+    public bool? IsReview { get; set; }
+    public string DevelopProcess { get; set; } = string.Empty;
 }
