@@ -88,36 +88,57 @@ public class AdoService
     }
 
     /// <summary>
-    /// ID リストを 200 件ずつバッチで取得します。
+    /// ID リストを 200 件ずつバッチで並列取得します（最大 5 同時リクエスト）。
     /// </summary>
-    public async Task<List<WorkItemData>> GetWorkItemsAsync(IEnumerable<int> ids)
+    public async Task<List<WorkItemData>> GetWorkItemsAsync(IEnumerable<int> ids, IProgress<int>? progress = null)
     {
-        var result = new List<WorkItemData>();
         var idList = ids.ToList();
-        if (idList.Count == 0) return result;
+        if (idList.Count == 0) return [];
 
         var fieldsParam = string.Join(",", WorkItemFields);
 
+        // バッチに分割
+        var batches = new List<int[]>();
         for (int i = 0; i < idList.Count; i += 200)
+            batches.Add(idList.Skip(i).Take(200).ToArray());
+
+        var results = new WorkItemData[batches.Count][];
+        var semaphore = new SemaphoreSlim(5);
+        int fetched = 0;
+
+        var tasks = batches.Select(async (batch, index) =>
         {
-            var batch = idList.Skip(i).Take(200);
-            var idsStr = string.Join(",", batch);
+            await semaphore.WaitAsync();
+            try
+            {
+                var idsStr = string.Join(",", batch);
+                var response = await _httpClient.GetAsync(
+                    $"{_orgUrl}/{_project}/_apis/wit/workitems" +
+                    $"?ids={idsStr}&fields={fieldsParam}&api-version=7.0");
 
-            var response = await _httpClient.GetAsync(
-                $"{_orgUrl}/{_project}/_apis/wit/workitems" +
-                $"?ids={idsStr}&fields={fieldsParam}&api-version=7.0");
+                response.EnsureSuccessStatusCode();
+                var json = await response.Content.ReadAsStringAsync();
 
-            response.EnsureSuccessStatusCode();
-            var json = await response.Content.ReadAsStringAsync();
+                using var doc = JsonDocument.Parse(json);
+                var items = new List<WorkItemData>();
+                if (doc.RootElement.TryGetProperty("value", out var value))
+                    foreach (var item in value.EnumerateArray())
+                        items.Add(ParseWorkItem(item));
 
-            using var doc = JsonDocument.Parse(json);
-            if (!doc.RootElement.TryGetProperty("value", out var value)) continue;
+                results[index] = [.. items];
 
-            foreach (var item in value.EnumerateArray())
-                result.Add(ParseWorkItem(item));
-        }
+                var done = Interlocked.Add(ref fetched, batch.Length);
+                progress?.Report(done);
+            }
+            finally
+            {
+                semaphore.Release();
+            }
+        }).ToArray();
 
-        return result;
+        await Task.WhenAll(tasks);
+
+        return results.SelectMany(r => r ?? []).ToList();
     }
 
     private static WorkItemData ParseWorkItem(JsonElement element)

@@ -301,9 +301,12 @@ public class MainViewModel : INotifyPropertyChanged
                 allIds.Add(tgtId);
             }
 
-            // バッチでワークアイテム取得
-            StatusMessage = $"{allIds.Count} 件のアイテムを取得中...";
-            var workItems = await service.GetWorkItemsAsync(allIds);
+            // バッチでワークアイテム取得（並列）
+            int total = allIds.Count;
+            StatusMessage = $"取得中: 0/{total} 件...";
+            var progressReporter = new Progress<int>(done =>
+                StatusMessage = $"取得中: {done}/{total} 件...");
+            var workItems = await service.GetWorkItemsAsync(allIds, progressReporter);
 
             // ノードマップ構築
             var nodeMap = new Dictionary<int, WorkItemNodeViewModel>(workItems.Count);
