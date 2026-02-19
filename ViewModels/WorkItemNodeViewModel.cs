@@ -40,6 +40,15 @@ public class WorkItemNodeViewModel : INotifyPropertyChanged
 
     public bool HasChildren => Children.Count > 0;
 
+    public List<PullRequestLink> LinkedPullRequests { get; } = [];
+    public bool IsPrsLoaded { get; set; }
+
+    public void SetPullRequests(IEnumerable<PullRequestLink> prs)
+    {
+        LinkedPullRequests.Clear();
+        foreach (var pr in prs) LinkedPullRequests.Add(pr);
+    }
+
     public WorkItemNodeViewModel(WorkItemData data)
     {
         Id = data.Id;

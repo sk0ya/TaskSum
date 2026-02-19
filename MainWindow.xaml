@@ -72,6 +72,7 @@
 
         <!-- ListView アイテムスタイル -->
         <Style x:Key="TreeListViewItem" TargetType="ListViewItem">
+            <EventSetter Event="ContextMenuOpening" Handler="OnListViewItemContextMenuOpening" />
             <Setter Property="HorizontalContentAlignment" Value="Stretch" />
             <Setter Property="Padding" Value="2,1" />
             <Setter Property="ContextMenu">

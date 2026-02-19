@@ -28,6 +28,8 @@ public class MainViewModel : INotifyPropertyChanged
     private bool _isAggColumnsOpen;
 
     private readonly List<WorkItemNodeViewModel> _rootNodes = [];
+    private AdoService? _adoService;
+    private Dictionary<string, (string RepoName, string ProjectName)>? _repoMap;
 
     // ----------------------------------------
     // プロパティ
@@ -179,6 +181,7 @@ public class MainViewModel : INotifyPropertyChanged
     public ICommand CollapseAllCommand { get; }
     public ICommand ClearFiltersCommand { get; }
     public ICommand OpenInBrowserCommand { get; }
+    public ICommand OpenPullRequestCommand { get; }
 
     // ----------------------------------------
     // コンストラクタ
@@ -198,6 +201,7 @@ public class MainViewModel : INotifyPropertyChanged
         CollapseAllCommand = new RelayCommand(() => SetExpandAll(false), () => !IsLoading);
         ClearFiltersCommand = new RelayCommand(ClearAllFilters, () => !IsLoading);
         OpenInBrowserCommand = new RelayCommand<WorkItemNodeViewModel>(OpenInBrowser);
+        OpenPullRequestCommand = new RelayCommand<PullRequestLink>(OpenPullRequest);
     }
 
     // ----------------------------------------
@@ -281,6 +285,8 @@ public class MainViewModel : INotifyPropertyChanged
             }
 
             var service = new AdoService(OrganizationUrl.Trim(), Project.Trim(), pat);
+            _adoService = service;
+            _repoMap = null; // 再読み込み時はリポジトリキャッシュをリセット
 
             // リンク取得 (WIQL Recursive)
             StatusMessage = "子アイテムのリンクを取得中...";
@@ -372,6 +378,35 @@ public class MainViewModel : INotifyPropertyChanged
         if (node == null) return;
         var url = $"{OrganizationUrl.TrimEnd('/')}/{Project}/_workitems/edit/{node.Id}";
         System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(url) { UseShellExecute = true });
+    }
+
+    private void OpenPullRequest(PullRequestLink? pr)
+    {
+        if (pr == null) return;
+        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(pr.WebUrl) { UseShellExecute = true });
+    }
+
+    /// <summary>
+    /// コンテキストメニューを開いた時に呼ばれる遅延PRロード。
+    /// 初回のみAPIを呼び、以降はキャッシュ済みのデータを使用する。
+    /// </summary>
+    public async Task LoadPullRequestsForNodeAsync(WorkItemNodeViewModel node)
+    {
+        if (node.IsPrsLoaded || _adoService == null) return;
+        node.IsPrsLoaded = true; // 二重取得防止のため先にフラグを立てる
+
+        try
+        {
+            // リポジトリマップは初回のみ取得してキャッシュ
+            _repoMap ??= await _adoService.GetRepositoriesAsync();
+
+            var prLinks = await _adoService.GetPullRequestsForWorkItemAsync(node.Id, _repoMap);
+            node.SetPullRequests(prLinks);
+        }
+        catch
+        {
+            node.IsPrsLoaded = false; // 失敗時はリセットして次回再試行可能に
+        }
     }
 
     // ----------------------------------------

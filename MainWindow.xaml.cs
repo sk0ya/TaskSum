@@ -1,6 +1,7 @@
 using System.Collections.Specialized;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
 using TaskSum.ViewModels;
@@ -37,6 +38,50 @@ public partial class MainWindow : Window
         double height = Math.Clamp(needed, 60, maxAllowed);
 
         RootGrid.RowDefinitions[4].Height = new GridLength(height);
+    }
+
+    private async void OnListViewItemContextMenuOpening(object sender, ContextMenuEventArgs e)
+    {
+        if (sender is not ListViewItem lvi) return;
+        if (lvi.DataContext is not WorkItemNodeViewModel node) return;
+        if (DataContext is not MainViewModel vm) return;
+
+        var cm = lvi.ContextMenu;
+        if (cm == null) return;
+
+        // PRがまだ読み込まれていなければ非同期で取得してからメニューを開く
+        if (!node.IsPrsLoaded)
+        {
+            e.Handled = true; // 一旦メニューを開かない
+            await vm.LoadPullRequestsForNodeAsync(node);
+            RebuildPrMenuItems(cm, node, vm);
+            cm.PlacementTarget = lvi;
+            cm.IsOpen = true;
+            return;
+        }
+
+        RebuildPrMenuItems(cm, node, vm);
+    }
+
+    private static void RebuildPrMenuItems(ContextMenu cm, WorkItemNodeViewModel node, MainViewModel vm)
+    {
+        // 前回追加したPRアイテムをクリア（"Webで開く" の1件目は残す）
+        while (cm.Items.Count > 1)
+            cm.Items.RemoveAt(1);
+
+        if (node.LinkedPullRequests.Count > 0)
+        {
+            cm.Items.Add(new Separator());
+            foreach (var pr in node.LinkedPullRequests)
+            {
+                cm.Items.Add(new MenuItem
+                {
+                    Header = pr.DisplayTitle,
+                    Command = vm.OpenPullRequestCommand,
+                    CommandParameter = pr,
+                });
+            }
+        }
     }
 
     protected override void OnSourceInitialized(EventArgs e)

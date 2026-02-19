@@ -141,6 +141,126 @@ public class AdoService
         return results.SelectMany(r => r ?? []).ToList();
     }
 
+    /// <summary>
+    /// オーガナイゼーション内の全Gitリポジトリを取得します。
+    /// 戻り値: repoGuid -> (repoName, projectName)
+    /// </summary>
+    public async Task<Dictionary<string, (string RepoName, string ProjectName)>> GetRepositoriesAsync()
+    {
+        var response = await _httpClient.GetAsync(
+            $"{_orgUrl}/_apis/git/repositories?api-version=7.0");
+
+        response.EnsureSuccessStatusCode();
+        var json = await response.Content.ReadAsStringAsync();
+
+        using var doc = JsonDocument.Parse(json);
+        var result = new Dictionary<string, (string, string)>(StringComparer.OrdinalIgnoreCase);
+
+        if (!doc.RootElement.TryGetProperty("value", out var value))
+            return result;
+
+        foreach (var repo in value.EnumerateArray())
+        {
+            if (!repo.TryGetProperty("id", out var idEl)) continue;
+            if (!repo.TryGetProperty("name", out var nameEl)) continue;
+
+            var id = idEl.GetString() ?? string.Empty;
+            var name = nameEl.GetString() ?? string.Empty;
+            if (string.IsNullOrEmpty(id)) continue;
+
+            var projectName = string.Empty;
+            if (repo.TryGetProperty("project", out var projEl) &&
+                projEl.TryGetProperty("name", out var projNameEl))
+                projectName = projNameEl.GetString() ?? string.Empty;
+
+            result[id] = (name, projectName);
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// WorkItem の relations から直接リンクされた PR を取得します。
+    /// single-item エンドポイントで $expand=relations を使用します。
+    /// </summary>
+    public async Task<List<PullRequestLink>> GetPullRequestsForWorkItemAsync(
+        int workItemId,
+        Dictionary<string, (string RepoName, string ProjectName)> repoMap)
+    {
+        var response = await _httpClient.GetAsync(
+            $"{_orgUrl}/{_project}/_apis/wit/workitems/{workItemId}?$expand=relations&api-version=7.0");
+
+        response.EnsureSuccessStatusCode();
+        var json = await response.Content.ReadAsStringAsync();
+
+        using var doc = JsonDocument.Parse(json);
+        var prLinks = new List<PullRequestLink>();
+
+        if (!doc.RootElement.TryGetProperty("relations", out var relations))
+            return prLinks;
+
+        // Azure DevOps が返す artifact URL 形式:
+        //   vstfs:///Git/PullRequestId/{projectGuid}%2F{repoGuid}%2F{prId}
+        // (%2F は URL エンコードされた '/')
+        // デコード後: 最後のセグメント = prId、その前 = repoGuid
+        const string prPrefix = "vstfs:///Git/PullRequestId/";
+        foreach (var rel in relations.EnumerateArray())
+        {
+            if (!rel.TryGetProperty("url", out var urlEl)) continue;
+            var artifactUrl = urlEl.GetString() ?? string.Empty;
+            if (!artifactUrl.StartsWith(prPrefix, StringComparison.OrdinalIgnoreCase)) continue;
+
+            // Azure DevOps は artifact ID 内の区切りを %2F でエンコードして返すため、
+            // 先に URL デコードしてから '/' で分割する。
+            var decoded = Uri.UnescapeDataString(artifactUrl[prPrefix.Length..]);
+            var parts = decoded.Split('/');
+            if (parts.Length < 2) continue;
+            if (!int.TryParse(parts[^1], out int prId)) continue;
+
+            var rawGuid = parts[^2].Trim('{', '}');
+            repoMap.TryGetValue(rawGuid, out var repoInfo);
+            var repoName = string.IsNullOrEmpty(repoInfo.RepoName) ? rawGuid : repoInfo.RepoName;
+            var projectName = string.IsNullOrEmpty(repoInfo.ProjectName) ? _project : repoInfo.ProjectName;
+
+            prLinks.Add(new PullRequestLink
+            {
+                PrId = prId,
+                RepoName = repoName,
+                RepoGuid = rawGuid,
+                ProjectName = projectName,
+                WebUrl = $"{_orgUrl}/{Uri.EscapeDataString(projectName)}/_git/{Uri.EscapeDataString(repoName)}/pullrequest/{prId}",
+            });
+        }
+
+        // PR タイトルを並列取得
+        await Task.WhenAll(prLinks.Select(pr => FetchPrTitleAsync(pr)));
+
+        return prLinks;
+    }
+
+    private async Task FetchPrTitleAsync(PullRequestLink pr)
+    {
+        try
+        {
+            var res = await _httpClient.GetAsync(
+                $"{_orgUrl}/{Uri.EscapeDataString(pr.ProjectName)}/_apis/git/repositories/{pr.RepoGuid}/pullrequests/{pr.PrId}?api-version=7.0");
+
+            if (!res.IsSuccessStatusCode) return;
+
+            var json = await res.Content.ReadAsStringAsync();
+            using var doc = JsonDocument.Parse(json);
+            if (doc.RootElement.TryGetProperty("title", out var titleEl))
+                pr.Title = titleEl.GetString() ?? string.Empty;
+        }
+        catch { /* タイトル取得失敗は無視 */ }
+        finally
+        {
+            pr.DisplayTitle = string.IsNullOrEmpty(pr.Title)
+                ? $"PR #{pr.PrId} ({pr.RepoName})"
+                : $"#{pr.PrId}: {pr.Title}";
+        }
+    }
+
     private static WorkItemData ParseWorkItem(JsonElement element)
     {
         var fields = element.GetProperty("fields");
