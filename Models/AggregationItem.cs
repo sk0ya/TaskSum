@@ -18,5 +18,9 @@ public class AggregationItem
     public double NonReviewRemainingWork { get; set; }
     public double NonReviewCompletedWork { get; set; }
 
+    // 完了レビュー率 = ReviewCompletedWork / TotalCompletedWork * 100
+    public double? ReviewCompletedRatio =>
+        TotalCompletedWork > 0 ? ReviewCompletedWork / TotalCompletedWork * 100 : null;
+
     public bool IsTotal { get; set; }
 }

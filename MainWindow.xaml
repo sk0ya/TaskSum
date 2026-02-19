@@ -713,6 +713,19 @@
                             </DataGridTextColumn.ElementStyle>
                         </DataGridTextColumn>
 
+                        <!-- 完了レビュー率 -->
+                        <DataGridTextColumn Header="完了レビュー率"
+                                            Binding="{Binding ReviewCompletedRatio, StringFormat='{}{0:0.#}%'}"
+                                            Width="100"
+                                            Visibility="{Binding Data.ColCmpRatioVisibility, Source={StaticResource VMProxy}}">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="HorizontalAlignment" Value="Right" />
+                                    <Setter Property="Padding" Value="0,0,8,0" />
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+
                     </DataGrid.Columns>
                 </DataGrid>
             </Grid>

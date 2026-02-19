@@ -150,6 +150,7 @@ public class MainViewModel : INotifyPropertyChanged
     public Visibility ColCmpAllVisibility     => ColVis("CmpAll");
     public Visibility ColCmpReviewVisibility  => ColVis("CmpReview");
     public Visibility ColCmpNonReviewVisibility => ColVis("CmpNonReview");
+    public Visibility ColCmpRatioVisibility     => ColVis("CmpRatio");
 
     // ----------------------------------------
     // コレクション
@@ -206,6 +207,7 @@ public class MainViewModel : INotifyPropertyChanged
             ("CmpAll",       "完了(全体)"),
             ("CmpReview",    "完了(レビュー)"),
             ("CmpNonReview", "完了(非レビュー)"),
+            ("CmpRatio",     "完了レビュー率"),
         };
 
         foreach (var (key, displayName) in defs)
