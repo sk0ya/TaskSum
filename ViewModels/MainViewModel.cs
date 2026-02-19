@@ -200,13 +200,13 @@ public class MainViewModel : INotifyPropertyChanged
             ("Count",        "件数"),
             ("EstAll",       "見積(全体)"),
             ("EstReview",    "見積(レビュー)"),
-            ("EstNonReview", "見積(非レビュー)"),
+            ("EstNonReview", "見積(作業時間)"),
             ("RemAll",       "残余(全体)"),
             ("RemReview",    "残余(レビュー)"),
-            ("RemNonReview", "残余(非レビュー)"),
+            ("RemNonReview", "残余(作業時間)"),
             ("CmpAll",       "完了(全体)"),
             ("CmpReview",    "完了(レビュー)"),
-            ("CmpNonReview", "完了(非レビュー)"),
+            ("CmpNonReview", "完了(作業時間)"),
             ("CmpRatio",     "完了レビュー率"),
         };
 

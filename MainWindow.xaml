@@ -622,8 +622,8 @@
                             </DataGridTextColumn.ElementStyle>
                         </DataGridTextColumn>
 
-                        <!-- 見積(非レビュー) -->
-                        <DataGridTextColumn Header="見積(非レビュー) (h)"
+                        <!-- 見積(作業時間) -->
+                        <DataGridTextColumn Header="見積(作業時間) (h)"
                                             Binding="{Binding NonReviewOriginalEstimate, StringFormat='0.##'}"
                                             Width="130"
                                             Visibility="{Binding Data.ColEstNonReviewVisibility, Source={StaticResource VMProxy}}">
@@ -661,8 +661,8 @@
                             </DataGridTextColumn.ElementStyle>
                         </DataGridTextColumn>
 
-                        <!-- 残余(非レビュー) -->
-                        <DataGridTextColumn Header="残余(非レビュー) (h)"
+                        <!-- 残余(作業時間) -->
+                        <DataGridTextColumn Header="残余(作業時間) (h)"
                                             Binding="{Binding NonReviewRemainingWork, StringFormat='0.##'}"
                                             Width="130"
                                             Visibility="{Binding Data.ColRemNonReviewVisibility, Source={StaticResource VMProxy}}">
@@ -700,8 +700,8 @@
                             </DataGridTextColumn.ElementStyle>
                         </DataGridTextColumn>
 
-                        <!-- 完了(非レビュー) -->
-                        <DataGridTextColumn Header="完了(非レビュー) (h)"
+                        <!-- 完了(作業時間) -->
+                        <DataGridTextColumn Header="完了(作業時間) (h)"
                                             Binding="{Binding NonReviewCompletedWork, StringFormat='0.##'}"
                                             Width="130"
                                             Visibility="{Binding Data.ColCmpNonReviewVisibility, Source={StaticResource VMProxy}}">
