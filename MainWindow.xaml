@@ -176,7 +176,7 @@
                          Width="160" Margin="0,0,14,0" Padding="5,3"
                          VerticalContentAlignment="Center" />
 
-                <TextBlock Text="Credential Name:" VerticalAlignment="Center" Margin="0,0,6,0" />
+                <TextBlock Text="PAT Key:" VerticalAlignment="Center" Margin="0,0,6,0" />
                 <TextBox Text="{Binding CredentialName, UpdateSourceTrigger=PropertyChanged}"
                          Width="120" Margin="0,0,14,0" Padding="5,3"
                          VerticalContentAlignment="Center"
