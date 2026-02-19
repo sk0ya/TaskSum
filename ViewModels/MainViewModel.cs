@@ -178,6 +178,7 @@ public class MainViewModel : INotifyPropertyChanged
     public ICommand ExpandAllCommand { get; }
     public ICommand CollapseAllCommand { get; }
     public ICommand ClearFiltersCommand { get; }
+    public ICommand OpenInBrowserCommand { get; }
 
     // ----------------------------------------
     // コンストラクタ
@@ -196,6 +197,7 @@ public class MainViewModel : INotifyPropertyChanged
         ExpandAllCommand = new RelayCommand(() => SetExpandAll(true), () => !IsLoading);
         CollapseAllCommand = new RelayCommand(() => SetExpandAll(false), () => !IsLoading);
         ClearFiltersCommand = new RelayCommand(ClearAllFilters, () => !IsLoading);
+        OpenInBrowserCommand = new RelayCommand<WorkItemNodeViewModel>(OpenInBrowser);
     }
 
     // ----------------------------------------
@@ -357,6 +359,16 @@ public class MainViewModel : INotifyPropertyChanged
         {
             IsLoading = false;
         }
+    }
+
+    // ----------------------------------------
+    // ブラウザで開く
+    // ----------------------------------------
+    private void OpenInBrowser(WorkItemNodeViewModel? node)
+    {
+        if (node == null) return;
+        var url = $"{OrganizationUrl.TrimEnd('/')}/{Project}/_workitems/edit/{node.Id}";
+        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(url) { UseShellExecute = true });
     }
 
     // ----------------------------------------

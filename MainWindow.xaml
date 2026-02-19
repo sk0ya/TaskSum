@@ -74,6 +74,16 @@
         <Style x:Key="TreeListViewItem" TargetType="ListViewItem">
             <Setter Property="HorizontalContentAlignment" Value="Stretch" />
             <Setter Property="Padding" Value="2,1" />
+            <Setter Property="ContextMenu">
+                <Setter.Value>
+                    <ContextMenu>
+                        <MenuItem Header="Webで開く"
+                                  Command="{Binding Data.OpenInBrowserCommand, Source={StaticResource VMProxy}}"
+                                  CommandParameter="{Binding PlacementTarget.DataContext,
+                                                    RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                    </ContextMenu>
+                </Setter.Value>
+            </Setter>
             <Style.Triggers>
                 <DataTrigger Binding="{Binding IsChecked}" Value="True">
                     <Setter Property="Background" Value="#FFF3CC" />
