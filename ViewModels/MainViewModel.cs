@@ -495,14 +495,14 @@ public class MainViewModel : INotifyPropertyChanged
             foreach (var node in checkedNodes)
                 foreach (var n in Subtree(node))
                     includedIds.Add(n.Id);
-            targets = VisibleNodes
+            targets = GetAllNodes()
                 .Where(n => includedIds.Contains(n.Id) &&
                             (n.OriginalEstimate.HasValue || n.RemainingWork.HasValue || n.CompletedWork.HasValue))
                 .ToList();
         }
         else
         {
-            targets = VisibleNodes
+            targets = GetAllNodes()
                 .Where(n => MatchesFilter(n, assignedSet, stateSet, isReviewSet, devProcessSet) &&
                             (n.OriginalEstimate.HasValue || n.RemainingWork.HasValue || n.CompletedWork.HasValue))
                 .ToList();
