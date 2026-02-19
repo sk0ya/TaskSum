@@ -424,11 +424,19 @@
                     <GridViewColumn Header="IsReview" Width="70">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <CheckBox IsChecked="{Binding IsReview}"
-                                          IsEnabled="False"
-                                          IsHitTestVisible="False"
-                                          HorizontalAlignment="Center"
-                                          VerticalAlignment="Center" />
+                                <TextBlock HorizontalAlignment="Center"
+                                           VerticalAlignment="Center">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Text" Value="" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsReview}" Value="True">
+                                                    <Setter Property="Text" Value="✓" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
