@@ -319,6 +319,8 @@
                 <Button Content="すべて展開" Command="{Binding ExpandAllCommand}"
                         Style="{StaticResource SubButton}" Margin="0,0,6,0" />
                 <Button Content="すべて折り畳む" Command="{Binding CollapseAllCommand}"
+                        Style="{StaticResource SubButton}" Margin="0,0,16,0" />
+                <Button Content="フィルタ全解除" Command="{Binding ClearFiltersCommand}"
                         Style="{StaticResource SubButton}" />
             </StackPanel>
         </Border>
@@ -407,15 +409,6 @@
                                            TextTrimming="CharacterEllipsis"
                                            ToolTip="{Binding AssignedTo}"
                                            VerticalAlignment="Center" />
-                            </DataTemplate>
-                        </GridViewColumn.CellTemplate>
-                    </GridViewColumn>
-
-                    <!-- アクティビティ -->
-                    <GridViewColumn Header="アクティビティ" Width="120">
-                        <GridViewColumn.CellTemplate>
-                            <DataTemplate>
-                                <TextBlock Text="{Binding Activity}" VerticalAlignment="Center" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>

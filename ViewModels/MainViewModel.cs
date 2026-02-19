@@ -143,6 +143,7 @@ public class MainViewModel : INotifyPropertyChanged
     public ICommand ToggleExpandCommand { get; }
     public ICommand ExpandAllCommand { get; }
     public ICommand CollapseAllCommand { get; }
+    public ICommand ClearFiltersCommand { get; }
 
     // ----------------------------------------
     // コンストラクタ
@@ -157,6 +158,7 @@ public class MainViewModel : INotifyPropertyChanged
         ToggleExpandCommand = new RelayCommand<WorkItemNodeViewModel>(ToggleExpand);
         ExpandAllCommand = new RelayCommand(() => SetExpandAll(true), () => !IsLoading);
         CollapseAllCommand = new RelayCommand(() => SetExpandAll(false), () => !IsLoading);
+        ClearFiltersCommand = new RelayCommand(ClearAllFilters, () => !IsLoading);
     }
 
     // ----------------------------------------
@@ -296,6 +298,14 @@ public class MainViewModel : INotifyPropertyChanged
         node.Level = level;
         foreach (var child in node.Children)
             SetLevel(child, level + 1);
+    }
+
+    private void ClearAllFilters()
+    {
+        foreach (var opt in AssignedToOptions) opt.IsChecked = false;
+        foreach (var opt in StateOptions) opt.IsChecked = false;
+        foreach (var opt in IsReviewOptions) opt.IsChecked = false;
+        foreach (var opt in DevelopProcessOptions) opt.IsChecked = false;
     }
 
     // ----------------------------------------
