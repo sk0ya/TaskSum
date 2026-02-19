@@ -596,11 +596,11 @@
                             </DataGridTextColumn.ElementStyle>
                         </DataGridTextColumn>
 
-                        <!-- 見積(全体) -->
-                        <DataGridTextColumn Header="見積(全体) (h)"
-                                            Binding="{Binding TotalOriginalEstimate, StringFormat='0.##'}"
-                                            Width="105"
-                                            Visibility="{Binding Data.ColEstAllVisibility, Source={StaticResource VMProxy}}">
+                        <!-- 見積(作業時間) -->
+                        <DataGridTextColumn Header="見積(作業時間) (h)"
+                                            Binding="{Binding NonReviewOriginalEstimate, StringFormat='0.##'}"
+                                            Width="130"
+                                            Visibility="{Binding Data.ColEstNonReviewVisibility, Source={StaticResource VMProxy}}">
                             <DataGridTextColumn.ElementStyle>
                                 <Style TargetType="TextBlock">
                                     <Setter Property="HorizontalAlignment" Value="Right" />
@@ -622,37 +622,11 @@
                             </DataGridTextColumn.ElementStyle>
                         </DataGridTextColumn>
 
-                        <!-- 見積(作業時間) -->
-                        <DataGridTextColumn Header="見積(作業時間) (h)"
-                                            Binding="{Binding NonReviewOriginalEstimate, StringFormat='0.##'}"
-                                            Width="130"
-                                            Visibility="{Binding Data.ColEstNonReviewVisibility, Source={StaticResource VMProxy}}">
-                            <DataGridTextColumn.ElementStyle>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="HorizontalAlignment" Value="Right" />
-                                    <Setter Property="Padding" Value="0,0,8,0" />
-                                </Style>
-                            </DataGridTextColumn.ElementStyle>
-                        </DataGridTextColumn>
-
-                        <!-- 残余(全体) -->
-                        <DataGridTextColumn Header="残余(全体) (h)"
-                                            Binding="{Binding TotalRemainingWork, StringFormat='0.##'}"
+                        <!-- 見積(全体) -->
+                        <DataGridTextColumn Header="見積(全体) (h)"
+                                            Binding="{Binding TotalOriginalEstimate, StringFormat='0.##'}"
                                             Width="105"
-                                            Visibility="{Binding Data.ColRemAllVisibility, Source={StaticResource VMProxy}}">
-                            <DataGridTextColumn.ElementStyle>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="HorizontalAlignment" Value="Right" />
-                                    <Setter Property="Padding" Value="0,0,8,0" />
-                                </Style>
-                            </DataGridTextColumn.ElementStyle>
-                        </DataGridTextColumn>
-
-                        <!-- 残余(レビュー) -->
-                        <DataGridTextColumn Header="残余(レビュー) (h)"
-                                            Binding="{Binding ReviewRemainingWork, StringFormat='0.##'}"
-                                            Width="120"
-                                            Visibility="{Binding Data.ColRemReviewVisibility, Source={StaticResource VMProxy}}">
+                                            Visibility="{Binding Data.ColEstAllVisibility, Source={StaticResource VMProxy}}">
                             <DataGridTextColumn.ElementStyle>
                                 <Style TargetType="TextBlock">
                                     <Setter Property="HorizontalAlignment" Value="Right" />
@@ -674,11 +648,37 @@
                             </DataGridTextColumn.ElementStyle>
                         </DataGridTextColumn>
 
-                        <!-- 完了(全体) -->
-                        <DataGridTextColumn Header="完了(全体) (h)"
-                                            Binding="{Binding TotalCompletedWork, StringFormat='0.##'}"
+                        <!-- 残余(レビュー) -->
+                        <DataGridTextColumn Header="残余(レビュー) (h)"
+                                            Binding="{Binding ReviewRemainingWork, StringFormat='0.##'}"
+                                            Width="120"
+                                            Visibility="{Binding Data.ColRemReviewVisibility, Source={StaticResource VMProxy}}">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="HorizontalAlignment" Value="Right" />
+                                    <Setter Property="Padding" Value="0,0,8,0" />
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+
+                        <!-- 残余(全体) -->
+                        <DataGridTextColumn Header="残余(全体) (h)"
+                                            Binding="{Binding TotalRemainingWork, StringFormat='0.##'}"
                                             Width="105"
-                                            Visibility="{Binding Data.ColCmpAllVisibility, Source={StaticResource VMProxy}}">
+                                            Visibility="{Binding Data.ColRemAllVisibility, Source={StaticResource VMProxy}}">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="HorizontalAlignment" Value="Right" />
+                                    <Setter Property="Padding" Value="0,0,8,0" />
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+
+                        <!-- 完了(作業時間) -->
+                        <DataGridTextColumn Header="完了(作業時間) (h)"
+                                            Binding="{Binding NonReviewCompletedWork, StringFormat='0.##'}"
+                                            Width="130"
+                                            Visibility="{Binding Data.ColCmpNonReviewVisibility, Source={StaticResource VMProxy}}">
                             <DataGridTextColumn.ElementStyle>
                                 <Style TargetType="TextBlock">
                                     <Setter Property="HorizontalAlignment" Value="Right" />
@@ -700,11 +700,11 @@
                             </DataGridTextColumn.ElementStyle>
                         </DataGridTextColumn>
 
-                        <!-- 完了(作業時間) -->
-                        <DataGridTextColumn Header="完了(作業時間) (h)"
-                                            Binding="{Binding NonReviewCompletedWork, StringFormat='0.##'}"
-                                            Width="130"
-                                            Visibility="{Binding Data.ColCmpNonReviewVisibility, Source={StaticResource VMProxy}}">
+                        <!-- 完了(全体) -->
+                        <DataGridTextColumn Header="完了(全体) (h)"
+                                            Binding="{Binding TotalCompletedWork, StringFormat='0.##'}"
+                                            Width="105"
+                                            Visibility="{Binding Data.ColCmpAllVisibility, Source={StaticResource VMProxy}}">
                             <DataGridTextColumn.ElementStyle>
                                 <Style TargetType="TextBlock">
                                     <Setter Property="HorizontalAlignment" Value="Right" />

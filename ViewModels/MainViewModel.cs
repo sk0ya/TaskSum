@@ -198,15 +198,15 @@ public class MainViewModel : INotifyPropertyChanged
         var defs = new[]
         {
             ("Count",        "件数"),
-            ("EstAll",       "見積(全体)"),
-            ("EstReview",    "見積(レビュー)"),
             ("EstNonReview", "見積(作業時間)"),
-            ("RemAll",       "残余(全体)"),
-            ("RemReview",    "残余(レビュー)"),
+            ("EstReview",    "見積(レビュー)"),
+            ("EstAll",       "見積(全体)"),
             ("RemNonReview", "残余(作業時間)"),
-            ("CmpAll",       "完了(全体)"),
-            ("CmpReview",    "完了(レビュー)"),
+            ("RemReview",    "残余(レビュー)"),
+            ("RemAll",       "残余(全体)"),
             ("CmpNonReview", "完了(作業時間)"),
+            ("CmpReview",    "完了(レビュー)"),
+            ("CmpAll",       "完了(全体)"),
             ("CmpRatio",     "完了レビュー率"),
         };
 
