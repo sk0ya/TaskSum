@@ -83,6 +83,50 @@
             </Style.Triggers>
         </Style>
 
+        <!-- フィルタドロップダウンスタイル -->
+        <Style x:Key="FilterDropdown" TargetType="ToggleButton">
+            <Setter Property="Background" Value="White" />
+            <Setter Property="BorderBrush" Value="#AAAAAA" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="6,3" />
+            <Setter Property="HorizontalContentAlignment" Value="Left" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="2">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="18" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0"
+                                           Text="{TemplateBinding Content}"
+                                           Margin="{TemplateBinding Padding}"
+                                           VerticalAlignment="Center"
+                                           TextTrimming="CharacterEllipsis" />
+                                <TextBlock Grid.Column="1" Text="▾"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"
+                                           FontSize="10" Foreground="#555555" />
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="BorderBrush" Value="#666666" />
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter Property="BorderBrush" Value="#0078D4" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <!-- DataGrid 合計行スタイル -->
         <Style x:Key="AggGridRow" TargetType="DataGridRow">
             <Style.Triggers>
@@ -152,15 +196,67 @@
                 <TextBlock Text="フィルタ:" FontWeight="SemiBold" VerticalAlignment="Center"
                            Margin="0,0,14,0" />
 
+                <!-- 担当者フィルタ -->
                 <TextBlock Text="担当者:" VerticalAlignment="Center" Margin="0,0,5,0" />
-                <ComboBox ItemsSource="{Binding AssignedToOptions}"
-                          SelectedItem="{Binding AssignedToFilter}"
-                          Width="180" Margin="0,0,16,0" />
+                <Grid Margin="0,0,16,0">
+                    <ToggleButton x:Name="BtnAssignedTo"
+                                  Content="{Binding AssignedToDisplayText}"
+                                  IsChecked="{Binding IsAssignedToOpen, Mode=TwoWay}"
+                                  Style="{StaticResource FilterDropdown}"
+                                  Width="180" />
+                    <Popup IsOpen="{Binding IsAssignedToOpen, Mode=TwoWay}"
+                           PlacementTarget="{Binding ElementName=BtnAssignedTo}"
+                           Placement="Bottom"
+                           StaysOpen="False"
+                           MinWidth="{Binding ActualWidth, ElementName=BtnAssignedTo}">
+                        <Border BorderBrush="#AAAAAA" BorderThickness="1" Background="White">
+                            <ScrollViewer MaxHeight="220" VerticalScrollBarVisibility="Auto"
+                                          Focusable="False">
+                                <ItemsControl ItemsSource="{Binding AssignedToOptions}"
+                                              Focusable="False">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <CheckBox Content="{Binding Name}"
+                                                      IsChecked="{Binding IsChecked}"
+                                                      Padding="4,2" Margin="4,2" />
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </Border>
+                    </Popup>
+                </Grid>
 
+                <!-- 状態フィルタ -->
                 <TextBlock Text="状態:" VerticalAlignment="Center" Margin="0,0,5,0" />
-                <ComboBox ItemsSource="{Binding StateOptions}"
-                          SelectedItem="{Binding StateFilter}"
-                          Width="130" Margin="0,0,20,0" />
+                <Grid Margin="0,0,20,0">
+                    <ToggleButton x:Name="BtnState"
+                                  Content="{Binding StateDisplayText}"
+                                  IsChecked="{Binding IsStateOpen, Mode=TwoWay}"
+                                  Style="{StaticResource FilterDropdown}"
+                                  Width="150" />
+                    <Popup IsOpen="{Binding IsStateOpen, Mode=TwoWay}"
+                           PlacementTarget="{Binding ElementName=BtnState}"
+                           Placement="Bottom"
+                           StaysOpen="False"
+                           MinWidth="{Binding ActualWidth, ElementName=BtnState}">
+                        <Border BorderBrush="#AAAAAA" BorderThickness="1" Background="White">
+                            <ScrollViewer MaxHeight="220" VerticalScrollBarVisibility="Auto"
+                                          Focusable="False">
+                                <ItemsControl ItemsSource="{Binding StateOptions}"
+                                              Focusable="False">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <CheckBox Content="{Binding Name}"
+                                                      IsChecked="{Binding IsChecked}"
+                                                      Padding="4,2" Margin="4,2" />
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </Border>
+                    </Popup>
+                </Grid>
 
                 <Button Content="すべて展開" Command="{Binding ExpandAllCommand}"
                         Style="{StaticResource SubButton}" Margin="0,0,6,0" />

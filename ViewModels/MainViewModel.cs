@@ -18,10 +18,10 @@ public class MainViewModel : INotifyPropertyChanged
     private string _organizationUrl = string.Empty;
     private string _project = string.Empty;
     private string _featureId = string.Empty;
-    private string _assignedToFilter = "All";
-    private string _stateFilter = "All";
     private bool _isLoading;
     private string _statusMessage = "準備完了";
+    private bool _isAssignedToOpen;
+    private bool _isStateOpen;
 
     private readonly List<WorkItemNodeViewModel> _rootNodes = [];
 
@@ -46,30 +46,6 @@ public class MainViewModel : INotifyPropertyChanged
         set { _featureId = value; OnPropertyChanged(); }
     }
 
-    public string AssignedToFilter
-    {
-        get => _assignedToFilter;
-        set
-        {
-            if (_assignedToFilter == value) return;
-            _assignedToFilter = value;
-            OnPropertyChanged();
-            ApplyFilters();
-        }
-    }
-
-    public string StateFilter
-    {
-        get => _stateFilter;
-        set
-        {
-            if (_stateFilter == value) return;
-            _stateFilter = value;
-            OnPropertyChanged();
-            ApplyFilters();
-        }
-    }
-
     public bool IsLoading
     {
         get => _isLoading;
@@ -88,12 +64,42 @@ public class MainViewModel : INotifyPropertyChanged
         set { _statusMessage = value; OnPropertyChanged(); }
     }
 
+    public bool IsAssignedToOpen
+    {
+        get => _isAssignedToOpen;
+        set { _isAssignedToOpen = value; OnPropertyChanged(); }
+    }
+
+    public bool IsStateOpen
+    {
+        get => _isStateOpen;
+        set { _isStateOpen = value; OnPropertyChanged(); }
+    }
+
+    public string AssignedToDisplayText
+    {
+        get
+        {
+            var checked_ = AssignedToOptions.Where(o => o.IsChecked).Select(o => o.Name).ToList();
+            return checked_.Count == 0 ? "すべて" : string.Join(", ", checked_);
+        }
+    }
+
+    public string StateDisplayText
+    {
+        get
+        {
+            var checked_ = StateOptions.Where(o => o.IsChecked).Select(o => o.Name).ToList();
+            return checked_.Count == 0 ? "すべて" : string.Join(", ", checked_);
+        }
+    }
+
     // ----------------------------------------
     // コレクション
     // ----------------------------------------
     public ObservableCollection<WorkItemNodeViewModel> VisibleNodes { get; } = [];
-    public ObservableCollection<string> AssignedToOptions { get; } = [];
-    public ObservableCollection<string> StateOptions { get; } = [];
+    public ObservableCollection<FilterOption> AssignedToOptions { get; } = [];
+    public ObservableCollection<FilterOption> StateOptions { get; } = [];
     public ObservableCollection<AggregationItem> AggregationItems { get; } = [];
 
     // ----------------------------------------
@@ -117,9 +123,6 @@ public class MainViewModel : INotifyPropertyChanged
         ToggleExpandCommand = new RelayCommand<WorkItemNodeViewModel>(ToggleExpand);
         ExpandAllCommand = new RelayCommand(() => SetExpandAll(true), () => !IsLoading);
         CollapseAllCommand = new RelayCommand(() => SetExpandAll(false), () => !IsLoading);
-
-        AssignedToOptions.Add("All");
-        StateOptions.Add("All");
     }
 
     // ----------------------------------------
@@ -262,57 +265,74 @@ public class MainViewModel : INotifyPropertyChanged
     }
 
     // ----------------------------------------
-    // フィルタ
+    // フィルタ選択肢の更新
     // ----------------------------------------
     private void UpdateFilterOptions()
     {
         var allNodes = GetAllNodes().ToList();
 
-        var prevAssigned = AssignedToFilter;
+        var prevCheckedAssigned = AssignedToOptions.Where(o => o.IsChecked).Select(o => o.Name).ToHashSet();
         AssignedToOptions.Clear();
-        AssignedToOptions.Add("All");
         foreach (var name in allNodes
             .Select(n => n.AssignedTo)
             .Where(s => !string.IsNullOrEmpty(s))
             .Distinct()
             .OrderBy(s => s))
         {
-            AssignedToOptions.Add(name);
+            var opt = new FilterOption(name, prevCheckedAssigned.Contains(name));
+            opt.PropertyChanged += OnAssignedToOptionChanged;
+            AssignedToOptions.Add(opt);
         }
-        _assignedToFilter = AssignedToOptions.Contains(prevAssigned) ? prevAssigned : "All";
-        OnPropertyChanged(nameof(AssignedToFilter));
+        OnPropertyChanged(nameof(AssignedToDisplayText));
 
-        var prevState = StateFilter;
+        var prevCheckedStates = StateOptions.Where(o => o.IsChecked).Select(o => o.Name).ToHashSet();
         StateOptions.Clear();
-        StateOptions.Add("All");
         foreach (var state in allNodes
             .Select(n => n.State)
             .Where(s => !string.IsNullOrEmpty(s))
             .Distinct()
             .OrderBy(s => s))
         {
-            StateOptions.Add(state);
+            var opt = new FilterOption(state, prevCheckedStates.Contains(state));
+            opt.PropertyChanged += OnStateOptionChanged;
+            StateOptions.Add(opt);
         }
-        _stateFilter = StateOptions.Contains(prevState) ? prevState : "All";
-        OnPropertyChanged(nameof(StateFilter));
+        OnPropertyChanged(nameof(StateDisplayText));
     }
 
-    /// <summary>
-    /// フィルタ条件で VisibleNodes を再構築します。
-    /// 条件に合致するアイテムとその祖先を表示します。
-    /// </summary>
+    private void OnAssignedToOptionChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName != nameof(FilterOption.IsChecked)) return;
+        OnPropertyChanged(nameof(AssignedToDisplayText));
+        ApplyFilters();
+    }
+
+    private void OnStateOptionChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName != nameof(FilterOption.IsChecked)) return;
+        OnPropertyChanged(nameof(StateDisplayText));
+        ApplyFilters();
+    }
+
+    // ----------------------------------------
+    // フィルタ適用
+    // ----------------------------------------
     private void ApplyFilters()
     {
+        var assignedSet = AssignedToOptions.Where(o => o.IsChecked).Select(o => o.Name).ToHashSet();
+        var stateSet = StateOptions.Where(o => o.IsChecked).Select(o => o.Name).ToHashSet();
+
         VisibleNodes.Clear();
         foreach (var root in _rootNodes)
-            AddVisibleNodes(root);
-        UpdateAggregation();
+            AddVisibleNodes(root, assignedSet, stateSet);
+
+        UpdateAggregation(assignedSet, stateSet);
     }
 
-    private void AddVisibleNodes(WorkItemNodeViewModel node)
+    private void AddVisibleNodes(WorkItemNodeViewModel node, HashSet<string> assignedSet, HashSet<string> stateSet)
     {
-        bool selfMatches = MatchesFilter(node);
-        bool anyDescendantMatches = AnyDescendantMatches(node);
+        bool selfMatches = MatchesFilter(node, assignedSet, stateSet);
+        bool anyDescendantMatches = AnyDescendantMatches(node, assignedSet, stateSet);
 
         if (!selfMatches && !anyDescendantMatches) return;
 
@@ -321,24 +341,24 @@ public class MainViewModel : INotifyPropertyChanged
         if (!node.IsExpanded) return;
 
         foreach (var child in node.Children)
-            AddVisibleNodes(child);
+            AddVisibleNodes(child, assignedSet, stateSet);
     }
 
-    private bool AnyDescendantMatches(WorkItemNodeViewModel node)
+    private static bool AnyDescendantMatches(WorkItemNodeViewModel node, HashSet<string> assignedSet, HashSet<string> stateSet)
     {
         foreach (var child in node.Children)
         {
-            if (MatchesFilter(child) || AnyDescendantMatches(child))
+            if (MatchesFilter(child, assignedSet, stateSet) || AnyDescendantMatches(child, assignedSet, stateSet))
                 return true;
         }
         return false;
     }
 
-    private bool MatchesFilter(WorkItemNodeViewModel node)
+    private static bool MatchesFilter(WorkItemNodeViewModel node, HashSet<string> assignedSet, HashSet<string> stateSet)
     {
-        if (AssignedToFilter != "All" && node.AssignedTo != AssignedToFilter)
+        if (assignedSet.Count > 0 && !assignedSet.Contains(node.AssignedTo))
             return false;
-        if (StateFilter != "All" && node.State != StateFilter)
+        if (stateSet.Count > 0 && !stateSet.Contains(node.State))
             return false;
         return true;
     }
@@ -346,13 +366,12 @@ public class MainViewModel : INotifyPropertyChanged
     // ----------------------------------------
     // 集計
     // ----------------------------------------
-    private void UpdateAggregation()
+    private void UpdateAggregation(HashSet<string> assignedSet, HashSet<string> stateSet)
     {
         AggregationItems.Clear();
 
-        // フィルタ条件に合致し、工数フィールドを持つ VisibleNode のみ集計
         var targets = VisibleNodes
-            .Where(n => MatchesFilter(n) &&
+            .Where(n => MatchesFilter(n, assignedSet, stateSet) &&
                         (n.OriginalEstimate.HasValue || n.RemainingWork.HasValue || n.CompletedWork.HasValue))
             .ToList();
 
