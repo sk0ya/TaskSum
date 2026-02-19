@@ -145,9 +145,11 @@
             <!-- フィルタバー -->
             <RowDefinition Height="Auto" />
             <!-- TreeListView -->
-            <RowDefinition Height="*" />
+            <RowDefinition Height="*" MinHeight="60" />
+            <!-- GridSplitter -->
+            <RowDefinition Height="5" />
             <!-- 集計パネル -->
-            <RowDefinition Height="200" />
+            <RowDefinition Height="200" MinHeight="60" />
             <!-- ステータスバー -->
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
@@ -484,9 +486,18 @@
         </ListView>
 
         <!-- ========================================
-             Row 3: 集計パネル
+             Row 3: GridSplitter
              ======================================== -->
-        <Border Grid.Row="3" BorderBrush="#D0D0D0" BorderThickness="0,1,0,0">
+        <GridSplitter Grid.Row="3"
+                      HorizontalAlignment="Stretch"
+                      VerticalAlignment="Stretch"
+                      Background="#D0D0D0"
+                      ResizeDirection="Rows" />
+
+        <!-- ========================================
+             Row 4: 集計パネル
+             ======================================== -->
+        <Border Grid.Row="4" BorderBrush="#D0D0D0" BorderThickness="0,1,0,0">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
@@ -563,9 +574,9 @@
         </Border>
 
         <!-- ========================================
-             Row 4: ステータスバー
+             Row 5: ステータスバー
              ======================================== -->
-        <StatusBar Grid.Row="4" BorderBrush="#D0D0D0" BorderThickness="0,1,0,0">
+        <StatusBar Grid.Row="5" BorderBrush="#D0D0D0" BorderThickness="0,1,0,0">
             <StatusBarItem>
                 <TextBlock Text="{Binding StatusMessage}" Margin="4,0" />
             </StatusBarItem>
