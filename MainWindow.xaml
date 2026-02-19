@@ -180,7 +180,7 @@
                 <TextBox Text="{Binding CredentialName, UpdateSourceTrigger=PropertyChanged}"
                          Width="120" Margin="0,0,14,0" Padding="5,3"
                          VerticalContentAlignment="Center"
-                         ToolTip="Windows 資格情報マネージャーの資格情報名 (既定: ADO_PAT)" />
+                         ToolTip="環境変数名 / Windows 資格情報マネージャーの資格情報名 (既定: ADO_PAT)&#x0a;環境変数を優先し、見つからない場合は資格情報マネージャーを参照します。" />
 
                 <TextBlock Text="Feature ID:" VerticalAlignment="Center" Margin="0,0,6,0" />
                 <TextBox Text="{Binding FeatureId, UpdateSourceTrigger=PropertyChanged}"
