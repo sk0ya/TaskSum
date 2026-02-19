@@ -480,7 +480,7 @@ public class MainViewModel : INotifyPropertyChanged
         if (targets.Count == 0) return;
 
         foreach (var group in targets
-            .GroupBy(n => string.IsNullOrEmpty(n.Activity) ? "未設定" : n.Activity)
+            .GroupBy(n => string.IsNullOrEmpty(n.DevelopProcess) ? "未設定" : n.DevelopProcess)
             .OrderBy(g => g.Key))
         {
             AggregationItems.Add(new AggregationItem

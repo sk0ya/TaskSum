@@ -496,7 +496,7 @@
                 <!-- 集計ヘッダー -->
                 <Border Grid.Row="0" Background="#EBEBEB" Padding="10,4"
                         BorderBrush="#D0D0D0" BorderThickness="0,0,0,1">
-                    <TextBlock Text="集計 (アクティビティ / DevelopProcess 別)"
+                    <TextBlock Text="集計 (Dev Process 別)"
                                FontWeight="SemiBold" />
                 </Border>
 
@@ -514,7 +514,7 @@
                           BorderThickness="0"
                           HorizontalScrollBarVisibility="Auto">
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="アクティビティ"
+                        <DataGridTextColumn Header="Dev Process"
                                             Binding="{Binding Activity}"
                                             Width="220" />
                         <DataGridTextColumn Header="件数"
