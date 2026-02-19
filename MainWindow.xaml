@@ -153,7 +153,7 @@
         </Style>
     </Window.Resources>
 
-    <Grid>
+    <Grid x:Name="RootGrid">
         <Grid.RowDefinitions>
             <!-- 設定バー -->
             <RowDefinition Height="Auto" />

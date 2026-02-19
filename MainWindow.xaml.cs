@@ -1,3 +1,4 @@
+using System.Collections.Specialized;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Interop;
@@ -10,10 +11,32 @@ public partial class MainWindow : Window
 {
     private const int WM_MOUSEHWHEEL = 0x020E;
 
+    // 集計パネルの行高さ推定値
+    private const double AggPanelHeaderHeight = 32;
+    private const double DataGridColumnHeaderHeight = 28;
+    private const double DataGridRowHeight = 26;
+
     public MainWindow()
     {
         InitializeComponent();
-        DataContext = new MainViewModel();
+        var vm = new MainViewModel();
+        DataContext = vm;
+        vm.AggregationItems.CollectionChanged += OnAggregationItemsChanged;
+    }
+
+    private void OnAggregationItemsChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        if (sender is not System.Collections.ObjectModel.ObservableCollection<Models.AggregationItem> items)
+            return;
+
+        // ヘッダー + DataGrid列ヘッダー + 行数分の高さを計算
+        double needed = AggPanelHeaderHeight + DataGridColumnHeaderHeight + items.Count * DataGridRowHeight;
+
+        // ウィンドウ高さの 60% を上限とし、MinHeight(60) を下限とする
+        double maxAllowed = Math.Max(60, ActualHeight * 0.6);
+        double height = Math.Clamp(needed, 60, maxAllowed);
+
+        RootGrid.RowDefinitions[4].Height = new GridLength(height);
     }
 
     protected override void OnSourceInitialized(EventArgs e)
