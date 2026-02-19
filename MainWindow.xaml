@@ -145,11 +145,9 @@
             <!-- フィルタバー -->
             <RowDefinition Height="Auto" />
             <!-- TreeListView -->
-            <RowDefinition Height="*" MinHeight="60" />
-            <!-- スプリッター -->
-            <RowDefinition Height="5" />
+            <RowDefinition Height="*" />
             <!-- 集計パネル -->
-            <RowDefinition Height="200" MinHeight="60" />
+            <RowDefinition Height="200" />
             <!-- ステータスバー -->
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
@@ -330,8 +328,7 @@
         <!-- ========================================
              Row 2: TreeListView
              ======================================== -->
-        <ListView x:Name="TreeListView"
-                  Grid.Row="2"
+        <ListView Grid.Row="2"
                   ItemsSource="{Binding VisibleNodes}"
                   ItemContainerStyle="{StaticResource TreeListViewItem}"
                   VirtualizingPanel.IsVirtualizing="True"
@@ -342,7 +339,7 @@
                 <GridView>
 
                     <!-- ID -->
-                    <GridViewColumn Header="ID" Width="55">
+                    <GridViewColumn Header="ID" Width="65">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
                                 <TextBlock Text="{Binding Id}"
@@ -352,8 +349,8 @@
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
 
-                    <!-- 種別 (オートフィット) -->
-                    <GridViewColumn Header="種別">
+                    <!-- 種別 -->
+                    <GridViewColumn Header="種別" Width="80">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
                                 <Border CornerRadius="2" Padding="4,1"
@@ -368,7 +365,7 @@
                     </GridViewColumn>
 
                     <!-- タイトル (ツリーインデント付き) -->
-                    <GridViewColumn Header="タイトル" Width="400">
+                    <GridViewColumn Header="タイトル" Width="420">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal"
@@ -395,8 +392,8 @@
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
 
-                    <!-- 状態 (オートフィット) -->
-                    <GridViewColumn Header="状態">
+                    <!-- 状態 -->
+                    <GridViewColumn Header="状態" Width="100">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
                                 <TextBlock Text="{Binding State}" VerticalAlignment="Center" />
@@ -404,8 +401,8 @@
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
 
-                    <!-- 担当者 (オートフィット) -->
-                    <GridViewColumn Header="担当者">
+                    <!-- 担当者 -->
+                    <GridViewColumn Header="担当者" Width="160">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
                                 <TextBlock Text="{Binding AssignedTo}"
@@ -417,7 +414,7 @@
                     </GridViewColumn>
 
                     <!-- IsReview -->
-                    <GridViewColumn Header="IsReview" Width="62">
+                    <GridViewColumn Header="IsReview" Width="70">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
                                 <TextBlock HorizontalAlignment="Center"
@@ -437,8 +434,8 @@
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
 
-                    <!-- Dev Process (オートフィット) -->
-                    <GridViewColumn Header="Dev Process">
+                    <!-- Dev Process -->
+                    <GridViewColumn Header="Dev Process" Width="130">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
                                 <TextBlock Text="{Binding DevelopProcess}"
@@ -450,7 +447,7 @@
                     </GridViewColumn>
 
                     <!-- 見積 -->
-                    <GridViewColumn Header="見積 (h)" Width="68">
+                    <GridViewColumn Header="見積 (h)" Width="80">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
                                 <TextBlock Text="{Binding OriginalEstimate, Converter={StaticResource DblFmt}}"
@@ -461,7 +458,7 @@
                     </GridViewColumn>
 
                     <!-- 残余 -->
-                    <GridViewColumn Header="残余 (h)" Width="68">
+                    <GridViewColumn Header="残余 (h)" Width="80">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
                                 <TextBlock Text="{Binding RemainingWork, Converter={StaticResource DblFmt}}"
@@ -472,7 +469,7 @@
                     </GridViewColumn>
 
                     <!-- 完了 -->
-                    <GridViewColumn Header="完了 (h)" Width="68">
+                    <GridViewColumn Header="完了 (h)" Width="80">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
                                 <TextBlock Text="{Binding CompletedWork, Converter={StaticResource DblFmt}}"
@@ -487,21 +484,9 @@
         </ListView>
 
         <!-- ========================================
-             Row 3: GridSplitter
+             Row 3: 集計パネル
              ======================================== -->
-        <GridSplitter Grid.Row="3"
-                      Height="5"
-                      HorizontalAlignment="Stretch"
-                      VerticalAlignment="Stretch"
-                      Background="#D0D0D0"
-                      ResizeDirection="Rows"
-                      ResizeBehavior="PreviousAndNext"
-                      ShowsPreview="False" />
-
-        <!-- ========================================
-             Row 4: 集計パネル
-             ======================================== -->
-        <Border Grid.Row="4" BorderBrush="#D0D0D0" BorderThickness="0,0,0,0">
+        <Border Grid.Row="3" BorderBrush="#D0D0D0" BorderThickness="0,1,0,0">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
@@ -578,9 +563,9 @@
         </Border>
 
         <!-- ========================================
-             Row 5: ステータスバー
+             Row 4: ステータスバー
              ======================================== -->
-        <StatusBar Grid.Row="5" BorderBrush="#D0D0D0" BorderThickness="0,1,0,0">
+        <StatusBar Grid.Row="4" BorderBrush="#D0D0D0" BorderThickness="0,1,0,0">
             <StatusBarItem>
                 <TextBlock Text="{Binding StatusMessage}" Margin="4,0" />
             </StatusBarItem>
