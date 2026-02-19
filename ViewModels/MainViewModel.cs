@@ -24,6 +24,7 @@ public class MainViewModel : INotifyPropertyChanged
     private bool _isStateOpen;
     private bool _isIsReviewOpen;
     private bool _isDevelopProcessOpen;
+    private bool _isAggColumnsOpen;
 
     private readonly List<WorkItemNodeViewModel> _rootNodes = [];
 
@@ -90,6 +91,12 @@ public class MainViewModel : INotifyPropertyChanged
         set { _isDevelopProcessOpen = value; OnPropertyChanged(); }
     }
 
+    public bool IsAggColumnsOpen
+    {
+        get => _isAggColumnsOpen;
+        set { _isAggColumnsOpen = value; OnPropertyChanged(); }
+    }
+
     public string AssignedToDisplayText
     {
         get
@@ -127,6 +134,24 @@ public class MainViewModel : INotifyPropertyChanged
     }
 
     // ----------------------------------------
+    // 集計列 Visibility プロパティ
+    // ----------------------------------------
+    private Visibility ColVis(string key)
+        => AggColumnOptions.FirstOrDefault(o => o.Key == key)?.IsChecked == true
+           ? Visibility.Visible : Visibility.Collapsed;
+
+    public Visibility ColCountVisibility      => ColVis("Count");
+    public Visibility ColEstAllVisibility     => ColVis("EstAll");
+    public Visibility ColEstReviewVisibility  => ColVis("EstReview");
+    public Visibility ColEstNonReviewVisibility => ColVis("EstNonReview");
+    public Visibility ColRemAllVisibility     => ColVis("RemAll");
+    public Visibility ColRemReviewVisibility  => ColVis("RemReview");
+    public Visibility ColRemNonReviewVisibility => ColVis("RemNonReview");
+    public Visibility ColCmpAllVisibility     => ColVis("CmpAll");
+    public Visibility ColCmpReviewVisibility  => ColVis("CmpReview");
+    public Visibility ColCmpNonReviewVisibility => ColVis("CmpNonReview");
+
+    // ----------------------------------------
     // コレクション
     // ----------------------------------------
     public ObservableCollection<WorkItemNodeViewModel> VisibleNodes { get; } = [];
@@ -135,6 +160,7 @@ public class MainViewModel : INotifyPropertyChanged
     public ObservableCollection<FilterOption> IsReviewOptions { get; } = [];
     public ObservableCollection<FilterOption> DevelopProcessOptions { get; } = [];
     public ObservableCollection<AggregationItem> AggregationItems { get; } = [];
+    public ObservableCollection<AggColumnOption> AggColumnOptions { get; } = [];
 
     // ----------------------------------------
     // コマンド
@@ -154,11 +180,53 @@ public class MainViewModel : INotifyPropertyChanged
         OrganizationUrl = settings.OrganizationUrl;
         Project = settings.Project;
 
+        InitAggColumnOptions(settings.HiddenAggregationColumns);
+
         LoadCommand = new AsyncRelayCommand(LoadWorkItemsAsync, () => !IsLoading);
         ToggleExpandCommand = new RelayCommand<WorkItemNodeViewModel>(ToggleExpand);
         ExpandAllCommand = new RelayCommand(() => SetExpandAll(true), () => !IsLoading);
         CollapseAllCommand = new RelayCommand(() => SetExpandAll(false), () => !IsLoading);
         ClearFiltersCommand = new RelayCommand(ClearAllFilters, () => !IsLoading);
+    }
+
+    // ----------------------------------------
+    // 集計列設定
+    // ----------------------------------------
+    private void InitAggColumnOptions(List<string> hiddenColumns)
+    {
+        var defs = new[]
+        {
+            ("Count",        "件数"),
+            ("EstAll",       "見積(全体)"),
+            ("EstReview",    "見積(レビュー)"),
+            ("EstNonReview", "見積(非レビュー)"),
+            ("RemAll",       "残余(全体)"),
+            ("RemReview",    "残余(レビュー)"),
+            ("RemNonReview", "残余(非レビュー)"),
+            ("CmpAll",       "完了(全体)"),
+            ("CmpReview",    "完了(レビュー)"),
+            ("CmpNonReview", "完了(非レビュー)"),
+        };
+
+        foreach (var (key, displayName) in defs)
+        {
+            var opt = new AggColumnOption(key, displayName, !hiddenColumns.Contains(key));
+            opt.PropertyChanged += OnAggColumnOptionChanged;
+            AggColumnOptions.Add(opt);
+        }
+    }
+
+    private void OnAggColumnOptionChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName != nameof(AggColumnOption.IsChecked)) return;
+        if (sender is not AggColumnOption changed) return;
+
+        OnPropertyChanged($"Col{changed.Key}Visibility");
+
+        var hiddenColumns = AggColumnOptions.Where(o => !o.IsChecked).Select(o => o.Key).ToList();
+        var settings = SettingsService.Load();
+        settings.HiddenAggregationColumns = hiddenColumns;
+        SettingsService.Save(settings);
     }
 
     // ----------------------------------------
@@ -177,11 +245,10 @@ public class MainViewModel : INotifyPropertyChanged
             return;
         }
 
-        SettingsService.Save(new AppSettings
-        {
-            OrganizationUrl = OrganizationUrl,
-            Project = Project,
-        });
+        var settings = SettingsService.Load();
+        settings.OrganizationUrl = OrganizationUrl;
+        settings.Project = Project;
+        SettingsService.Save(settings);
 
         IsLoading = true;
         _rootNodes.Clear();
@@ -514,25 +581,43 @@ public class MainViewModel : INotifyPropertyChanged
             .GroupBy(n => string.IsNullOrEmpty(n.DevelopProcess) ? "未設定" : n.DevelopProcess)
             .OrderBy(g => g.Key))
         {
+            var reviewNodes    = group.Where(n => n.IsReview == true).ToList();
+            var nonReviewNodes = group.Where(n => n.IsReview != true).ToList();
+
             AggregationItems.Add(new AggregationItem
             {
                 Activity = group.Key,
                 Count = group.Count(),
                 TotalOriginalEstimate = group.Sum(n => n.OriginalEstimate ?? 0),
-                TotalRemainingWork = group.Sum(n => n.RemainingWork ?? 0),
-                TotalCompletedWork = group.Sum(n => n.CompletedWork ?? 0),
+                TotalRemainingWork    = group.Sum(n => n.RemainingWork ?? 0),
+                TotalCompletedWork    = group.Sum(n => n.CompletedWork ?? 0),
+                ReviewOriginalEstimate    = reviewNodes.Sum(n => n.OriginalEstimate ?? 0),
+                ReviewRemainingWork       = reviewNodes.Sum(n => n.RemainingWork ?? 0),
+                ReviewCompletedWork       = reviewNodes.Sum(n => n.CompletedWork ?? 0),
+                NonReviewOriginalEstimate = nonReviewNodes.Sum(n => n.OriginalEstimate ?? 0),
+                NonReviewRemainingWork    = nonReviewNodes.Sum(n => n.RemainingWork ?? 0),
+                NonReviewCompletedWork    = nonReviewNodes.Sum(n => n.CompletedWork ?? 0),
                 IsTotal = false,
             });
         }
 
         // 合計行
+        var reviewAll    = targets.Where(n => n.IsReview == true).ToList();
+        var nonReviewAll = targets.Where(n => n.IsReview != true).ToList();
+
         AggregationItems.Add(new AggregationItem
         {
             Activity = "合計",
             Count = targets.Count,
             TotalOriginalEstimate = targets.Sum(n => n.OriginalEstimate ?? 0),
-            TotalRemainingWork = targets.Sum(n => n.RemainingWork ?? 0),
-            TotalCompletedWork = targets.Sum(n => n.CompletedWork ?? 0),
+            TotalRemainingWork    = targets.Sum(n => n.RemainingWork ?? 0),
+            TotalCompletedWork    = targets.Sum(n => n.CompletedWork ?? 0),
+            ReviewOriginalEstimate    = reviewAll.Sum(n => n.OriginalEstimate ?? 0),
+            ReviewRemainingWork       = reviewAll.Sum(n => n.RemainingWork ?? 0),
+            ReviewCompletedWork       = reviewAll.Sum(n => n.CompletedWork ?? 0),
+            NonReviewOriginalEstimate = nonReviewAll.Sum(n => n.OriginalEstimate ?? 0),
+            NonReviewRemainingWork    = nonReviewAll.Sum(n => n.RemainingWork ?? 0),
+            NonReviewCompletedWork    = nonReviewAll.Sum(n => n.CompletedWork ?? 0),
             IsTotal = true,
         });
     }
