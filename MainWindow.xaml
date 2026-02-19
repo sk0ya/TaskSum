@@ -1,0 +1,394 @@
+<Window x:Class="TaskSum.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:conv="clr-namespace:TaskSum.Converters"
+        xmlns:vm="clr-namespace:TaskSum.ViewModels"
+        mc:Ignorable="d"
+        Title="TaskSum - Azure DevOps 工数集計"
+        Height="820" Width="1280"
+        FontSize="13"
+        d:DataContext="{d:DesignInstance Type=vm:MainViewModel}">
+
+    <Window.Resources>
+        <conv:BoolToVisibilityConverter x:Key="BoolToVis" />
+        <conv:BoolToVisibilityConverter x:Key="InvBoolToVis" Invert="True" />
+        <conv:ExpandedToArrowConverter x:Key="ExpandArrow" />
+        <conv:LevelToIndentConverter x:Key="LevelIndent" />
+        <conv:DoubleFormatConverter x:Key="DblFmt" />
+        <conv:WorkItemTypeColorConverter x:Key="TypeColor" />
+
+        <!-- 読み込みボタンスタイル -->
+        <Style x:Key="PrimaryButton" TargetType="Button">
+            <Setter Property="Background" Value="#0078D4" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="14,5" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                Padding="{TemplateBinding Padding}"
+                                CornerRadius="3">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center" />
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Background" Value="#AAAAAA" />
+                </Trigger>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#005A9E" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- サブボタンスタイル -->
+        <Style x:Key="SubButton" TargetType="Button">
+            <Setter Property="BorderBrush" Value="#BBBBBB" />
+            <Setter Property="Background" Value="White" />
+            <Setter Property="Padding" Value="8,3" />
+            <Setter Property="Cursor" Value="Hand" />
+        </Style>
+
+        <!-- 展開ボタンスタイル -->
+        <Style x:Key="ExpandButton" TargetType="Button">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Width" Value="18" />
+            <Setter Property="Height" Value="18" />
+            <Setter Property="FontSize" Value="9" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Focusable" Value="False" />
+        </Style>
+
+        <!-- ListView アイテムスタイル -->
+        <Style x:Key="TreeListViewItem" TargetType="ListViewItem">
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="Padding" Value="2,1" />
+            <Style.Triggers>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="#CCE4FF" />
+                    <Setter Property="Foreground" Value="Black" />
+                </Trigger>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#E8F4FF" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- DataGrid 合計行スタイル -->
+        <Style x:Key="AggGridRow" TargetType="DataGridRow">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsTotal}" Value="True">
+                    <Setter Property="FontWeight" Value="Bold" />
+                    <Setter Property="Background" Value="#D6EAD6" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <!-- 設定バー -->
+            <RowDefinition Height="Auto" />
+            <!-- フィルタバー -->
+            <RowDefinition Height="Auto" />
+            <!-- TreeListView -->
+            <RowDefinition Height="*" />
+            <!-- 集計パネル -->
+            <RowDefinition Height="200" />
+            <!-- ステータスバー -->
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- ========================================
+             Row 0: 設定バー
+             ======================================== -->
+        <Border Grid.Row="0" Background="#F0F0F0" Padding="10,7"
+                BorderBrush="#D0D0D0" BorderThickness="0,0,0,1">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <TextBlock Text="Organization URL:" VerticalAlignment="Center" Margin="0,0,6,0" />
+                <TextBox Text="{Binding OrganizationUrl, UpdateSourceTrigger=PropertyChanged}"
+                         Width="300" Margin="0,0,14,0" Padding="5,3"
+                         VerticalContentAlignment="Center"
+                         ToolTip="例: https://dev.azure.com/myorg" />
+
+                <TextBlock Text="Project:" VerticalAlignment="Center" Margin="0,0,6,0" />
+                <TextBox Text="{Binding Project, UpdateSourceTrigger=PropertyChanged}"
+                         Width="160" Margin="0,0,14,0" Padding="5,3"
+                         VerticalContentAlignment="Center" />
+
+                <TextBlock Text="Feature ID:" VerticalAlignment="Center" Margin="0,0,6,0" />
+                <TextBox Text="{Binding FeatureId, UpdateSourceTrigger=PropertyChanged}"
+                         Width="90" Margin="0,0,10,0" Padding="5,3"
+                         VerticalContentAlignment="Center">
+                    <TextBox.InputBindings>
+                        <KeyBinding Key="Return" Command="{Binding LoadCommand}" />
+                    </TextBox.InputBindings>
+                </TextBox>
+
+                <Button Content="読み込み" Command="{Binding LoadCommand}"
+                        Style="{StaticResource PrimaryButton}" Margin="0,0,10,0" />
+
+                <ProgressBar IsIndeterminate="True" Width="90" Height="14"
+                             Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}"
+                             VerticalAlignment="Center" />
+            </StackPanel>
+        </Border>
+
+        <!-- ========================================
+             Row 1: フィルタバー
+             ======================================== -->
+        <Border Grid.Row="1" Background="#FAFAFA" Padding="10,5"
+                BorderBrush="#D0D0D0" BorderThickness="0,0,0,1">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <TextBlock Text="フィルタ:" FontWeight="SemiBold" VerticalAlignment="Center"
+                           Margin="0,0,14,0" />
+
+                <TextBlock Text="担当者:" VerticalAlignment="Center" Margin="0,0,5,0" />
+                <ComboBox ItemsSource="{Binding AssignedToOptions}"
+                          SelectedItem="{Binding AssignedToFilter}"
+                          Width="180" Margin="0,0,16,0" />
+
+                <TextBlock Text="状態:" VerticalAlignment="Center" Margin="0,0,5,0" />
+                <ComboBox ItemsSource="{Binding StateOptions}"
+                          SelectedItem="{Binding StateFilter}"
+                          Width="130" Margin="0,0,20,0" />
+
+                <Button Content="すべて展開" Command="{Binding ExpandAllCommand}"
+                        Style="{StaticResource SubButton}" Margin="0,0,6,0" />
+                <Button Content="すべて折り畳む" Command="{Binding CollapseAllCommand}"
+                        Style="{StaticResource SubButton}" />
+            </StackPanel>
+        </Border>
+
+        <!-- ========================================
+             Row 2: TreeListView
+             ======================================== -->
+        <ListView Grid.Row="2"
+                  ItemsSource="{Binding VisibleNodes}"
+                  ItemContainerStyle="{StaticResource TreeListViewItem}"
+                  VirtualizingPanel.IsVirtualizing="True"
+                  VirtualizingPanel.VirtualizationMode="Recycling"
+                  ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                  BorderThickness="0">
+            <ListView.View>
+                <GridView>
+
+                    <!-- ID -->
+                    <GridViewColumn Header="ID" Width="65">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Id}"
+                                           HorizontalAlignment="Right"
+                                           VerticalAlignment="Center" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+
+                    <!-- 種別 -->
+                    <GridViewColumn Header="種別" Width="80">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <Border CornerRadius="2" Padding="4,1"
+                                        Background="{Binding WorkItemType, Converter={StaticResource TypeColor}}">
+                                    <TextBlock Text="{Binding WorkItemType}"
+                                               Foreground="White"
+                                               FontSize="10"
+                                               VerticalAlignment="Center" />
+                                </Border>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+
+                    <!-- タイトル (ツリーインデント付き) -->
+                    <GridViewColumn Header="タイトル" Width="420">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal"
+                                            Margin="{Binding Level, Converter={StaticResource LevelIndent}}"
+                                            VerticalAlignment="Center">
+                                    <!-- 展開ボタン (子あり) -->
+                                    <Button Content="{Binding IsExpanded, Converter={StaticResource ExpandArrow}}"
+                                            Style="{StaticResource ExpandButton}"
+                                            Command="{Binding DataContext.ToggleExpandCommand,
+                                                      RelativeSource={RelativeSource AncestorType=ListView}}"
+                                            CommandParameter="{Binding}"
+                                            Visibility="{Binding HasChildren, Converter={StaticResource BoolToVis}}"
+                                            Margin="0,0,3,0" />
+                                    <!-- スペーサー (子なし) -->
+                                    <Border Width="21" Height="1"
+                                            Visibility="{Binding HasChildren, Converter={StaticResource InvBoolToVis}}" />
+                                    <!-- タイトル -->
+                                    <TextBlock Text="{Binding Title}"
+                                               VerticalAlignment="Center"
+                                               TextTrimming="CharacterEllipsis"
+                                               ToolTip="{Binding Title}" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+
+                    <!-- 状態 -->
+                    <GridViewColumn Header="状態" Width="100">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding State}" VerticalAlignment="Center" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+
+                    <!-- 担当者 -->
+                    <GridViewColumn Header="担当者" Width="160">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding AssignedTo}"
+                                           TextTrimming="CharacterEllipsis"
+                                           ToolTip="{Binding AssignedTo}"
+                                           VerticalAlignment="Center" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+
+                    <!-- アクティビティ -->
+                    <GridViewColumn Header="アクティビティ" Width="120">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Activity}" VerticalAlignment="Center" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+
+                    <!-- 見積 -->
+                    <GridViewColumn Header="見積 (h)" Width="80">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding OriginalEstimate, Converter={StaticResource DblFmt}}"
+                                           HorizontalAlignment="Right"
+                                           VerticalAlignment="Center" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+
+                    <!-- 残余 -->
+                    <GridViewColumn Header="残余 (h)" Width="80">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding RemainingWork, Converter={StaticResource DblFmt}}"
+                                           HorizontalAlignment="Right"
+                                           VerticalAlignment="Center" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+
+                    <!-- 完了 -->
+                    <GridViewColumn Header="完了 (h)" Width="80">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding CompletedWork, Converter={StaticResource DblFmt}}"
+                                           HorizontalAlignment="Right"
+                                           VerticalAlignment="Center" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+
+                </GridView>
+            </ListView.View>
+        </ListView>
+
+        <!-- ========================================
+             Row 3: 集計パネル
+             ======================================== -->
+        <Border Grid.Row="3" BorderBrush="#D0D0D0" BorderThickness="0,1,0,0">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <!-- 集計ヘッダー -->
+                <Border Grid.Row="0" Background="#EBEBEB" Padding="10,4"
+                        BorderBrush="#D0D0D0" BorderThickness="0,0,0,1">
+                    <TextBlock Text="集計 (アクティビティ / DevelopProcess 別)"
+                               FontWeight="SemiBold" />
+                </Border>
+
+                <!-- 集計テーブル -->
+                <DataGrid Grid.Row="1"
+                          ItemsSource="{Binding AggregationItems}"
+                          AutoGenerateColumns="False"
+                          IsReadOnly="True"
+                          CanUserAddRows="False"
+                          CanUserDeleteRows="False"
+                          GridLinesVisibility="All"
+                          HeadersVisibility="Column"
+                          RowHeaderWidth="0"
+                          RowStyle="{StaticResource AggGridRow}"
+                          BorderThickness="0"
+                          HorizontalScrollBarVisibility="Auto">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="アクティビティ"
+                                            Binding="{Binding Activity}"
+                                            Width="220" />
+                        <DataGridTextColumn Header="件数"
+                                            Binding="{Binding Count}"
+                                            Width="60">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="HorizontalAlignment" Value="Right" />
+                                    <Setter Property="Padding" Value="0,0,8,0" />
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="見積合計 (h)"
+                                            Binding="{Binding TotalOriginalEstimate, StringFormat='0.##'}"
+                                            Width="120">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="HorizontalAlignment" Value="Right" />
+                                    <Setter Property="Padding" Value="0,0,8,0" />
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="残余合計 (h)"
+                                            Binding="{Binding TotalRemainingWork, StringFormat='0.##'}"
+                                            Width="120">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="HorizontalAlignment" Value="Right" />
+                                    <Setter Property="Padding" Value="0,0,8,0" />
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="完了合計 (h)"
+                                            Binding="{Binding TotalCompletedWork, StringFormat='0.##'}"
+                                            Width="120">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="HorizontalAlignment" Value="Right" />
+                                    <Setter Property="Padding" Value="0,0,8,0" />
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Grid>
+        </Border>
+
+        <!-- ========================================
+             Row 4: ステータスバー
+             ======================================== -->
+        <StatusBar Grid.Row="4" BorderBrush="#D0D0D0" BorderThickness="0,1,0,0">
+            <StatusBarItem>
+                <TextBlock Text="{Binding StatusMessage}" Margin="4,0" />
+            </StatusBarItem>
+        </StatusBar>
+    </Grid>
+</Window>

@@ -1,0 +1,19 @@
+# Build outputs
+bin/
+obj/
+
+# User-specific files
+*.user
+*.suo
+.vs/
+
+# IDE
+.idea/
+*.DotSettings.user
+
+# Claude Code
+.claude/
+
+# OS
+Thumbs.db
+.DS_Store
