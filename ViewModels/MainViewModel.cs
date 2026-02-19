@@ -566,6 +566,7 @@ public class MainViewModel : INotifyPropertyChanged
                     includedIds.Add(n.Id);
             targets = GetAllNodes()
                 .Where(n => includedIds.Contains(n.Id) &&
+                            MatchesFilter(n, assignedSet, stateSet, isReviewSet, devProcessSet) &&
                             (n.OriginalEstimate.HasValue || n.RemainingWork.HasValue || n.CompletedWork.HasValue))
                 .ToList();
         }
