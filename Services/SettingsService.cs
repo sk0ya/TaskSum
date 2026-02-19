@@ -7,6 +7,7 @@ public class AppSettings
 {
     public string OrganizationUrl { get; set; } = string.Empty;
     public string Project { get; set; } = string.Empty;
+    public string CredentialName { get; set; } = "ADO_PAT";
     public List<string> HiddenAggregationColumns { get; set; } = [];
 }
 

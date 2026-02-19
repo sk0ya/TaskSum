@@ -176,6 +176,12 @@
                          Width="160" Margin="0,0,14,0" Padding="5,3"
                          VerticalContentAlignment="Center" />
 
+                <TextBlock Text="Credential Name:" VerticalAlignment="Center" Margin="0,0,6,0" />
+                <TextBox Text="{Binding CredentialName, UpdateSourceTrigger=PropertyChanged}"
+                         Width="120" Margin="0,0,14,0" Padding="5,3"
+                         VerticalContentAlignment="Center"
+                         ToolTip="Windows 資格情報マネージャーの資格情報名 (既定: ADO_PAT)" />
+
                 <TextBlock Text="Feature ID:" VerticalAlignment="Center" Margin="0,0,6,0" />
                 <TextBox Text="{Binding FeatureId, UpdateSourceTrigger=PropertyChanged}"
                          Width="90" Margin="0,0,10,0" Padding="5,3"

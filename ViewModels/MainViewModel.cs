@@ -17,6 +17,7 @@ public class MainViewModel : INotifyPropertyChanged
     // ----------------------------------------
     private string _organizationUrl = string.Empty;
     private string _project = string.Empty;
+    private string _credentialName = "ADO_PAT";
     private string _featureId = string.Empty;
     private bool _isLoading;
     private string _statusMessage = "準備完了";
@@ -41,6 +42,12 @@ public class MainViewModel : INotifyPropertyChanged
     {
         get => _project;
         set { _project = value; OnPropertyChanged(); }
+    }
+
+    public string CredentialName
+    {
+        get => _credentialName;
+        set { _credentialName = value; OnPropertyChanged(); }
     }
 
     public string FeatureId
@@ -180,6 +187,7 @@ public class MainViewModel : INotifyPropertyChanged
         var settings = SettingsService.Load();
         OrganizationUrl = settings.OrganizationUrl;
         Project = settings.Project;
+        CredentialName = string.IsNullOrWhiteSpace(settings.CredentialName) ? "ADO_PAT" : settings.CredentialName;
 
         InitAggColumnOptions(settings.HiddenAggregationColumns);
 
@@ -250,6 +258,7 @@ public class MainViewModel : INotifyPropertyChanged
         var settings = SettingsService.Load();
         settings.OrganizationUrl = OrganizationUrl;
         settings.Project = Project;
+        settings.CredentialName = string.IsNullOrWhiteSpace(CredentialName) ? "ADO_PAT" : CredentialName;
         SettingsService.Save(settings);
 
         IsLoading = true;
@@ -261,10 +270,11 @@ public class MainViewModel : INotifyPropertyChanged
         {
             // PAT 取得
             StatusMessage = "PAT を取得中...";
-            var pat = CredentialManagerService.GetPat();
+            var credName = string.IsNullOrWhiteSpace(CredentialName) ? "ADO_PAT" : CredentialName;
+            var pat = CredentialManagerService.GetPat(credName);
             if (pat == null)
             {
-                StatusMessage = "エラー: Windows 資格情報マネージャーに 'ADO_PAT' が見つかりません。";
+                StatusMessage = $"エラー: Windows 資格情報マネージャーに '{credName}' が見つかりません。";
                 return;
             }
 

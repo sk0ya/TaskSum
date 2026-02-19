@@ -39,9 +39,9 @@ public static class CredentialManagerService
     [DllImport("Advapi32.dll", EntryPoint = "CredFree", SetLastError = true)]
     private static extern void CredFree(IntPtr credential);
 
-    public static string? GetPat()
+    public static string? GetPat(string targetName = TargetName)
     {
-        if (!CredRead(TargetName, CRED_TYPE_GENERIC, 0, out IntPtr credPtr))
+        if (!CredRead(targetName, CRED_TYPE_GENERIC, 0, out IntPtr credPtr))
             return null;
 
         try
