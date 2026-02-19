@@ -41,6 +41,12 @@ public static class CredentialManagerService
 
     public static string? GetPat(string targetName = TargetName)
     {
+        // 1. 環境変数を優先チェック
+        var envPat = Environment.GetEnvironmentVariable(targetName);
+        if (!string.IsNullOrEmpty(envPat))
+            return envPat;
+
+        // 2. Windows 資格情報マネージャーにフォールバック
         if (!CredRead(targetName, CRED_TYPE_GENERIC, 0, out IntPtr credPtr))
             return null;
 

@@ -274,7 +274,7 @@ public class MainViewModel : INotifyPropertyChanged
             var pat = CredentialManagerService.GetPat(credName);
             if (pat == null)
             {
-                StatusMessage = $"エラー: Windows 資格情報マネージャーに '{credName}' が見つかりません。";
+                StatusMessage = $"エラー: 環境変数 '{credName}' も資格情報マネージャーにも PAT が見つかりません。";
                 return;
             }
 
