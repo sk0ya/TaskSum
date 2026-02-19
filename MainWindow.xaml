@@ -18,6 +18,7 @@
         <conv:LevelToIndentConverter x:Key="LevelIndent" />
         <conv:DoubleFormatConverter x:Key="DblFmt" />
         <conv:WorkItemTypeColorConverter x:Key="TypeColor" />
+        <conv:ThresholdToBackgroundConverter x:Key="ThresholdBg" />
 
         <!-- 読み込みボタンスタイル -->
         <Style x:Key="PrimaryButton" TargetType="Button">
@@ -489,9 +490,12 @@
                     <GridViewColumn Header="完了 (h)" Width="80">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding CompletedWork, Converter={StaticResource DblFmt}}"
-                                           HorizontalAlignment="Right"
-                                           VerticalAlignment="Center" />
+                                <Border Background="{Binding CompletedWork, Converter={StaticResource ThresholdBg}}"
+                                        HorizontalAlignment="Stretch" Padding="0,1">
+                                    <TextBlock Text="{Binding CompletedWork, Converter={StaticResource DblFmt}}"
+                                               HorizontalAlignment="Right"
+                                               VerticalAlignment="Center" />
+                                </Border>
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
