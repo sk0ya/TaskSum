@@ -7,6 +7,7 @@ namespace TaskSum.ViewModels;
 public class WorkItemNodeViewModel : INotifyPropertyChanged
 {
     private bool _isExpanded = true;
+    private bool _isChecked;
 
     public int Id { get; }
     public string Title { get; }
@@ -26,6 +27,12 @@ public class WorkItemNodeViewModel : INotifyPropertyChanged
     {
         get => _isExpanded;
         set { _isExpanded = value; OnPropertyChanged(); }
+    }
+
+    public bool IsChecked
+    {
+        get => _isChecked;
+        set { _isChecked = value; OnPropertyChanged(); }
     }
 
     public List<WorkItemNodeViewModel> Children { get; } = [];

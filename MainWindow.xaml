@@ -73,6 +73,9 @@
             <Setter Property="HorizontalContentAlignment" Value="Stretch" />
             <Setter Property="Padding" Value="2,1" />
             <Style.Triggers>
+                <DataTrigger Binding="{Binding IsChecked}" Value="True">
+                    <Setter Property="Background" Value="#FFF3CC" />
+                </DataTrigger>
                 <Trigger Property="IsSelected" Value="True">
                     <Setter Property="Background" Value="#CCE4FF" />
                     <Setter Property="Foreground" Value="Black" />
@@ -339,6 +342,18 @@
                   BorderThickness="0">
             <ListView.View>
                 <GridView>
+
+                    <!-- 集計絞り込みチェックボックス -->
+                    <GridViewColumn Header="集計" Width="42">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <CheckBox IsChecked="{Binding IsChecked, Mode=TwoWay}"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"
+                                          ToolTip="チェックした項目とその子のみ集計" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
 
                     <!-- ID -->
                     <GridViewColumn Header="ID" Width="65">

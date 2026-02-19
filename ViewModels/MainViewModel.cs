@@ -227,7 +227,11 @@ public class MainViewModel : INotifyPropertyChanged
             // ノードマップ構築
             var nodeMap = new Dictionary<int, WorkItemNodeViewModel>(workItems.Count);
             foreach (var wi in workItems)
-                nodeMap[wi.Id] = new WorkItemNodeViewModel(wi);
+            {
+                var node = new WorkItemNodeViewModel(wi);
+                node.PropertyChanged += OnNodeCheckedChanged;
+                nodeMap[wi.Id] = node;
+            }
 
             // 親子関係を確立
             foreach (var (childId, parentId) in parentMap)
@@ -306,6 +310,7 @@ public class MainViewModel : INotifyPropertyChanged
         foreach (var opt in StateOptions) opt.IsChecked = false;
         foreach (var opt in IsReviewOptions) opt.IsChecked = false;
         foreach (var opt in DevelopProcessOptions) opt.IsChecked = false;
+        foreach (var node in GetAllNodes()) node.IsChecked = false;
     }
 
     // ----------------------------------------
@@ -398,6 +403,16 @@ public class MainViewModel : INotifyPropertyChanged
         ApplyFilters();
     }
 
+    private void OnNodeCheckedChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName != nameof(WorkItemNodeViewModel.IsChecked)) return;
+        var assignedSet = AssignedToOptions.Where(o => o.IsChecked).Select(o => o.Name).ToHashSet();
+        var stateSet = StateOptions.Where(o => o.IsChecked).Select(o => o.Name).ToHashSet();
+        var isReviewSet = IsReviewOptions.Where(o => o.IsChecked).Select(o => o.Name).ToHashSet();
+        var devProcessSet = DevelopProcessOptions.Where(o => o.IsChecked).Select(o => o.Name).ToHashSet();
+        UpdateAggregation(assignedSet, stateSet, isReviewSet, devProcessSet);
+    }
+
     // ----------------------------------------
     // フィルタ適用
     // ----------------------------------------
@@ -472,10 +487,26 @@ public class MainViewModel : INotifyPropertyChanged
     {
         AggregationItems.Clear();
 
-        var targets = VisibleNodes
-            .Where(n => MatchesFilter(n, assignedSet, stateSet, isReviewSet, devProcessSet) &&
-                        (n.OriginalEstimate.HasValue || n.RemainingWork.HasValue || n.CompletedWork.HasValue))
-            .ToList();
+        var checkedNodes = GetAllNodes().Where(n => n.IsChecked).ToList();
+        List<WorkItemNodeViewModel> targets;
+        if (checkedNodes.Count > 0)
+        {
+            var includedIds = new HashSet<int>();
+            foreach (var node in checkedNodes)
+                foreach (var n in Subtree(node))
+                    includedIds.Add(n.Id);
+            targets = VisibleNodes
+                .Where(n => includedIds.Contains(n.Id) &&
+                            (n.OriginalEstimate.HasValue || n.RemainingWork.HasValue || n.CompletedWork.HasValue))
+                .ToList();
+        }
+        else
+        {
+            targets = VisibleNodes
+                .Where(n => MatchesFilter(n, assignedSet, stateSet, isReviewSet, devProcessSet) &&
+                            (n.OriginalEstimate.HasValue || n.RemainingWork.HasValue || n.CompletedWork.HasValue))
+                .ToList();
+        }
 
         if (targets.Count == 0) return;
 
