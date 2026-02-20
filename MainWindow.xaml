@@ -7,6 +7,7 @@
         xmlns:vm="clr-namespace:TaskSum.ViewModels"
         mc:Ignorable="d"
         Title="TaskSum - Azure DevOps 工数集計"
+        Icon="pack://application:,,,/TaskSum.ico"
         Height="820" Width="1280"
         FontSize="13"
         d:DataContext="{d:DesignInstance Type=vm:MainViewModel}">
