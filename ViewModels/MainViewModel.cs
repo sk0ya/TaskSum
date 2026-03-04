@@ -192,6 +192,7 @@ public class MainViewModel : INotifyPropertyChanged
         OrganizationUrl = settings.OrganizationUrl;
         Project = settings.Project;
         CredentialName = string.IsNullOrWhiteSpace(settings.CredentialName) ? "ADO_PAT" : settings.CredentialName;
+        FeatureId = settings.FeatureId;
 
         InitAggColumnOptions(settings.HiddenAggregationColumns);
 
@@ -265,6 +266,7 @@ public class MainViewModel : INotifyPropertyChanged
         settings.OrganizationUrl = OrganizationUrl;
         settings.Project = Project;
         settings.CredentialName = string.IsNullOrWhiteSpace(CredentialName) ? "ADO_PAT" : CredentialName;
+        settings.FeatureId = FeatureId;
         SettingsService.Save(settings);
 
         IsLoading = true;

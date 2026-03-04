@@ -9,6 +9,7 @@ public class AppSettings
     public string Project { get; set; } = string.Empty;
     public string CredentialName { get; set; } = "ADO_PAT";
     public List<string> HiddenAggregationColumns { get; set; } = [];
+    public string FeatureId { get; set; } = string.Empty;
 }
 
 public static class SettingsService
